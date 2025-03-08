@@ -1,0 +1,8 @@
+// 禁用自动生成 Info.plist
+GENERATE_INFOPLIST_FILE = NO
+
+// 指定手动创建的 Info.plist 文件路径
+INFOPLIST_FILE = EatBreakfirstWidget/Info.plist
+
+// 禁用 Copy Bundle Resources 阶段中的 Info.plist
+COPY_PHASE_STRIP = NO 

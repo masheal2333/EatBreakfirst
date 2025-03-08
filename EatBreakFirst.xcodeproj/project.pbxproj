@@ -67,11 +67,21 @@
 			);
 			target = 1C71B6312D7A9FB6005D975B /* EatBreakfirstWidgetExtension */;
 		};
+		1C71B68C2D7B4AAE005D975B /* Exceptions for "EatBreakFirst" folder in "EatBreakFirst" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 1C2EFE8C2D799F7900ED9CDC /* EatBreakFirst */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1C2EFE8F2D799F7900ED9CDC /* EatBreakFirst */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				1C71B68C2D7B4AAE005D975B /* Exceptions for "EatBreakFirst" folder in "EatBreakFirst" target */,
+			);
 			path = EatBreakFirst;
 			sourceTree = "<group>";
 		};
@@ -514,7 +524,8 @@
 				DEVELOPMENT_ASSET_PATHS = "\"EatBreakFirst/Preview Content\"";
 				DEVELOPMENT_TEAM = BTJJQSGHJG;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = EatBreakFirst/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -531,10 +542,10 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -548,7 +559,8 @@
 				DEVELOPMENT_ASSET_PATHS = "\"EatBreakFirst/Preview Content\"";
 				DEVELOPMENT_TEAM = BTJJQSGHJG;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = EatBreakFirst/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -565,10 +577,10 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -652,7 +664,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BTJJQSGHJG;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = EatBreakfirstWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = EatBreakfirstWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -679,7 +691,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BTJJQSGHJG;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = EatBreakfirstWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = EatBreakfirstWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

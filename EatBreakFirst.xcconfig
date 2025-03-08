@@ -1,0 +1,14 @@
+// 禁用自动生成 Info.plist
+GENERATE_INFOPLIST_FILE = NO
+
+// 指定手动创建的 Info.plist 文件路径
+INFOPLIST_FILE = EatBreakFirst/Info.plist
+
+// 禁用 Copy Bundle Resources 阶段中的 Info.plist
+COPY_PHASE_STRIP = NO
+
+// 确保不会复制 Info.plist
+SKIP_INSTALL = NO
+
+// 设置正确的产品名称
+PRODUCT_NAME = EatBreakFirst 
