@@ -13,8 +13,20 @@ struct EatBreakFirstApp: App {
     @StateObject private var breakfastTracker = BreakfastTracker()
     
     init() {
+        // 确保App Group正确设置
+        let appGroupIdentifier = "group.com.masheal2333.EatBreakFirst"
+        let defaults = UserDefaults(suiteName: appGroupIdentifier)
+        if defaults == nil {
+            print("警告: 无法创建带有 App Group 的 UserDefaults，可能是项目设置问题")
+        } else {
+            print("应用: 成功使用 App Group \(appGroupIdentifier) 初始化 UserDefaults")
+        }
+        
         // 设置通知代理
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        
+        // 初始化用户角色管理器
+        _ = UserRoleManager.shared
         
         #if DEBUG
         // 在调试模式下生成图标
@@ -26,6 +38,10 @@ struct EatBreakFirstApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(breakfastTracker)
+                .onAppear {
+                    // 确保小组件数据与应用数据一致
+                    breakfastTracker.ensureWidgetDataConsistency()
+                }
         }
     }
     

@@ -58,6 +58,50 @@ class BreakfastTracker: ObservableObject {
                 print("通知权限请求错误: \(error.localizedDescription)")
             }
         }
+        
+        // 添加通知观察器，当应用进入前台时刷新数据
+        #if os(iOS)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(refreshDataFromSharedStorage),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+        #endif
+    }
+    
+    deinit {
+        // 移除通知观察器
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // 当应用进入前台时刷新数据
+    @objc private func refreshDataFromSharedStorage() {
+        print("应用进入前台，从共享存储刷新数据")
+        loadRecords()
+        calculateStreak()
+        // 通知观察者数据已更新
+        objectWillChange.send()
+        
+        // 强制更新小组件，确保数据一致性
+        DispatchQueue.main.async {
+            self.forceUpdateWidget()
+            print("应用进入前台，已强制更新小组件以确保数据一致性")
+        }
+    }
+    
+    // 确保应用和小组件数据一致性的公共方法
+    func ensureWidgetDataConsistency() {
+        print("应用: 开始执行小组件数据一致性检查")
+        
+        // 强制同步到磁盘
+        BreakfastTracker.shared.synchronize()
+        
+        // 强制更新小组件
+        DispatchQueue.main.async {
+            self.forceUpdateWidget()
+            print("应用: 已强制更新小组件以确保数据一致性")
+        }
     }
     
     func recordBreakfast(eaten: Bool, for date: Date = Date()) {
@@ -79,7 +123,28 @@ class BreakfastTracker: ObservableObject {
     // 更新小组件
     private func updateWidget() {
         #if os(iOS)
+        print("应用: 正在刷新小组件时间线")
         WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+    
+    // 强制更新小组件，使用多次重试机制确保更新成功
+    private func forceUpdateWidget() {
+        #if os(iOS)
+        print("应用: 强制刷新小组件时间线")
+        
+        // 立即更新一次
+        WidgetCenter.shared.reloadAllTimelines()
+        
+        // 使用多次延迟更新，确保小组件能够获取到最新数据
+        let delayTimes = [0.3, 0.8, 2.0] // 多个时间点进行更新
+        
+        for (index, delay) in delayTimes.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                print("应用: 第\(index + 1)次延迟更新小组件 (延迟\(delay)秒)")
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+        }
         #endif
     }
     
@@ -110,11 +175,24 @@ class BreakfastTracker: ObservableObject {
         let recordsArray = records.map { BreakfastRecord(date: $0.key.timeIntervalSince1970, hasEaten: $0.value) }
         if let encoded = try? encoder.encode(recordsArray) {
             shared.set(encoded, forKey: "breakfastRecords")
+            shared.synchronize() // 确保立即同步到磁盘
+            print("Widget静态方法: 数据已保存并同步到磁盘")
         }
         
         // 更新小组件
         #if os(iOS)
+        print("Widget静态方法: 强制刷新小组件")
         WidgetCenter.shared.reloadAllTimelines()
+        
+        // 使用多次延迟更新，确保小组件能够获取到最新数据
+        let delayTimes = [0.3, 0.8, 2.0] // 多个时间点进行更新
+        
+        for (index, delay) in delayTimes.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                print("Widget静态方法: 第\(index + 1)次延迟更新小组件 (延迟\(delay)秒)")
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+        }
         #endif
     }
     
@@ -164,20 +242,38 @@ class BreakfastTracker: ObservableObject {
         let encoder = JSONEncoder()
         let recordsArray = records.map { BreakfastRecord(date: $0.key.timeIntervalSince1970, hasEaten: $0.value) }
         if let encoded = try? encoder.encode(recordsArray) {
+            print("应用: 正在保存\(recordsArray.count)条记录到UserDefaults")
+            
+            // 确保使用正确的键名保存数据
             BreakfastTracker.shared.set(encoded, forKey: userDefaultsKey)
-            // Update widget
-            updateWidget()
+            
+            // 强制同步到磁盘
+            BreakfastTracker.shared.synchronize()
+            print("应用: 数据已保存并同步到磁盘")
+            
+            // 使用强制更新机制确保小组件立即更新
+            DispatchQueue.main.async {
+                self.forceUpdateWidget()
+            }
+        } else {
+            print("应用: 编码记录数组失败")
         }
     }
     
     private func loadRecords() {
+        print("正在从共享存储加载记录...")
         if let data = BreakfastTracker.shared.data(forKey: userDefaultsKey) {
             let decoder = JSONDecoder()
             if let recordsArray = try? decoder.decode([BreakfastRecord].self, from: data) {
                 records = Dictionary(uniqueKeysWithValues: recordsArray.map { 
                     (Date(timeIntervalSince1970: $0.date), $0.hasEaten) 
                 })
+                print("成功加载了\(recordsArray.count)条记录")
+            } else {
+                print("无法解码从UserDefaults加载的记录数据")
             }
+        } else {
+            print("UserDefaults中没有找到breakfastRecords数据")
         }
         
         // Load longest streak
@@ -440,6 +536,43 @@ class BreakfastTracker: ObservableObject {
         print("早餐提醒已取消")
     }
     
+    // 请求通知权限
+    func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
+        let center = UNUserNotificationCenter.current()
+        
+        // 检查当前通知权限状态
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                // 已经有权限，直接返回成功
+                DispatchQueue.main.async {
+                    completion(true)
+                }
+            case .notDetermined:
+                // 用户尚未决定，请求权限
+                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            print("请求通知权限时出错: \(error.localizedDescription)")
+                            completion(false)
+                        } else {
+                            completion(granted)
+                        }
+                    }
+                }
+            case .denied:
+                // 用户之前拒绝了，需要引导用户去设置中开启
+                DispatchQueue.main.async {
+                    completion(false)
+                }
+            @unknown default:
+                DispatchQueue.main.async {
+                    completion(false)
+                }
+            }
+        }
+    }
+    
     // 检查今天是否可以选择早餐状态
     func canSelectBreakfastToday() -> Bool {
         let calendar = Calendar.current
@@ -472,5 +605,27 @@ class BreakfastTracker: ObservableObject {
         
         // 通知观察者状态已重置
         objectWillChange.send()
+    }
+    
+    // 清除今天的早餐记录
+    func clearTodayRecord() {
+        let calendar = Calendar.current
+        let today = Date()
+        let components = calendar.dateComponents([.year, .month, .day], from: today)
+        
+        if let normalizedDate = calendar.date(from: components) {
+            // 从记录中移除今天的数据
+            records.removeValue(forKey: normalizedDate)
+            saveRecords()
+            calculateStreak()
+            
+            print("应用: 已清除今天的早餐记录")
+            
+            // 确保小组件数据与应用数据一致
+            ensureWidgetDataConsistency()
+            
+            // 通知观察者状态已更新
+            objectWillChange.send()
+        }
     }
 }

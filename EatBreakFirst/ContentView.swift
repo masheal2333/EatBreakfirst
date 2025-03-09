@@ -24,6 +24,8 @@ struct ContentView: View {
     @State private var midnightTimer: Timer? = nil
     // 添加一个状态来跟踪今天是否可以选择早餐状态
     @State private var canSelectToday: Bool = true
+    // 添加用户角色状态
+    @State private var isAdmin: Bool = false
     
     // 使用新的颜色系统 - 灵感来自斯德哥尔摩设计学院的色彩理论
     private let accentColor = Color.accentColor     // 主题蓝色 - 沉稳而专业
@@ -71,6 +73,32 @@ struct ContentView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        #if DEBUG
+                        // 在调试模式下，长按统计按钮可以切换角色
+                        .onLongPressGesture {
+                            UserRoleManager.shared.toggleRole()
+                            isAdmin = UserRoleManager.shared.isAdmin()
+                            
+                            // 显示角色切换提示
+                            let roleName = isAdmin ? "管理员" : "普通用户"
+                            let feedback = UINotificationFeedbackGenerator()
+                            feedback.notificationOccurred(.success)
+                            
+                            // 使用临时弹窗提示角色已切换
+                            let alert = UIAlertController(
+                                title: "角色已切换",
+                                message: "当前角色: \(roleName)",
+                                preferredStyle: .alert
+                            )
+                            alert.addAction(UIAlertAction(title: "确定", style: .default))
+                            
+                            // 获取当前的 UIWindow
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let rootViewController = windowScene.windows.first?.rootViewController {
+                                rootViewController.present(alert, animated: true)
+                            }
+                        }
+                        #endif
                         
                         Spacer()
                         
@@ -267,10 +295,36 @@ struct ContentView: View {
                             
                             // 如果不能选择今天的早餐状态，显示一个提示
                             if !breakfastTracker.canSelectBreakfastToday() {
-                                Text("今天已记录，明天再吃一顿早饭!")
+                                Text("今天已记录，明天再来")
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.secondary)
                                     .padding(.top, 10)
+                            }
+                            
+                            // 添加清除今天记录的按钮（仅管理员可见）
+                            if isAdmin {
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                        breakfastTracker.clearTodayRecord()
+                                        hasEatenBreakfast = nil
+                                        canSelectToday = true
+                                    }
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "arrow.counterclockwise")
+                                            .font(.system(size: 14))
+                                        Text("清除今天的记录")
+                                            .font(.system(size: 14, weight: .medium))
+                                    }
+                                    .foregroundColor(.secondary)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color.gray.opacity(0.1))
+                                    )
+                                }
+                                .padding(.top, 16)
                             }
                         }
                         .padding(.horizontal, 24)
@@ -366,30 +420,7 @@ struct ContentView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
-                            // 始终显示返回按钮
-                            // Back button with refined design
-                            Button(action: {
-                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                    hasEatenBreakfast = nil
-                                }
-                            }) {
-                                Text("返回")
-                                    .font(.system(size: 17, weight: .medium))
-                                    .frame(width: 140)
-                                    .padding(.vertical, 14)
-                                    .background(
-                                        Capsule()
-                                            .fill(Color.primary.opacity(0.05))
-                                    )
-                                    .foregroundColor(.primary)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                                    )
-                                    .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
-                            }
-                            .buttonStyle(ScaleButtonStyle())
-                            .padding(.top, 30)
+                            // 返回按钮已移除
                             
                             // 如果不能选择今天的早餐状态，显示一个提示
                             if !breakfastTracker.canSelectBreakfastToday() {
@@ -397,6 +428,32 @@ struct ContentView: View {
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.secondary)
                                     .padding(.top, 10)
+                            }
+                            
+                            // 添加清除今天记录的按钮（仅管理员可见）
+                            if isAdmin {
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                        breakfastTracker.clearTodayRecord()
+                                        hasEatenBreakfast = nil
+                                        canSelectToday = true
+                                    }
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "arrow.counterclockwise")
+                                            .font(.system(size: 14))
+                                        Text("清除今天的记录")
+                                            .font(.system(size: 14, weight: .medium))
+                                    }
+                                    .foregroundColor(.secondary)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color.gray.opacity(0.1))
+                                    )
+                                }
+                                .padding(.top, 16)
                             }
                         }
                         .padding(.horizontal, 24)
@@ -446,6 +503,21 @@ struct ContentView: View {
             // 检查今天是否可以选择早餐状态
             canSelectToday = breakfastTracker.canSelectBreakfastToday()
             
+            // 确保小组件数据与应用数据一致
+            breakfastTracker.ensureWidgetDataConsistency()
+            
+            // 初始化用户角色状态
+            isAdmin = UserRoleManager.shared.isAdmin()
+            
+            // 添加角色变更通知监听
+            NotificationCenter.default.addObserver(
+                forName: .userRoleDidChange,
+                object: nil,
+                queue: .main
+            ) { _ in
+                self.isAdmin = UserRoleManager.shared.isAdmin()
+            }
+            
             // 设置计时器，每分钟检查一次是否已经过了午夜
             midnightTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
                 let calendar = Calendar.current
@@ -472,6 +544,9 @@ struct ContentView: View {
             // 清理计时器
             midnightTimer?.invalidate()
             midnightTimer = nil
+            
+            // 移除角色变更通知监听
+            NotificationCenter.default.removeObserver(self, name: .userRoleDidChange, object: nil)
         }
     }
 }

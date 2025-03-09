@@ -358,14 +358,6 @@ public struct StatsView: View {
         .padding(.horizontal, 20)
     }
     
-
-    
-
-    
-
-    
-
-    
     // 评价标签视图
     private var assessmentBadgeView: some View {
         let assessmentText = getCompletionRateAssessment(rate: stats.completionRate)
@@ -398,7 +390,7 @@ public struct StatsView: View {
                 }) {
                     Image(systemName: showDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(getCompletionRateColor(rate: stats.completionRate))
                 }
             }
             .padding(.horizontal, 20)
@@ -499,14 +491,6 @@ public struct StatsView: View {
         .background(cardBackground)
         .padding(.horizontal, 20)
     }
-    
-
-    
-
-    
-
-    
-
     
     // 动画效果
     private var animationEffect: some View {

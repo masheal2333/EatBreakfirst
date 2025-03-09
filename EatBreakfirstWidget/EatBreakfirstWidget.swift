@@ -23,6 +23,14 @@ struct Provider: AppIntentTimelineProvider {
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
+        print("Widget: 开始生成时间线")
+        
+        // 执行数据一致性检查，确保小组件数据与应用数据一致
+        ensureDataConsistency()
+        
+        // 强制同步 UserDefaults
+        BreakfastTracker.shared.synchronize()
+        
         // 获取早餐状态和连续天数
         let hasEatenBreakfast = getTodayBreakfastStatus()
         let streak = calculateStreak()
@@ -37,27 +45,89 @@ struct Provider: AppIntentTimelineProvider {
             streak: streak
         )
         
-        // 设置下一次更新时间（午夜）
-        let calendar = Calendar.current
-        let tomorrow = calendar.startOfDay(for: Date().addingTimeInterval(86400))
+        // 设置下一次更新时间（较短时间，确保能及时更新）
+        // 根据当前状态决定更新频率
+        let nextUpdateDate: Date
+        if hasEatenBreakfast == nil {
+            // 如果没有记录，更频繁地检查（5分钟）
+            nextUpdateDate = Date().addingTimeInterval(5 * 60)
+            print("Widget: 未记录状态，设置5分钟后更新")
+        } else {
+            // 如果已有记录，可以降低更新频率（15分钟）
+            nextUpdateDate = Date().addingTimeInterval(15 * 60)
+            print("Widget: 已记录状态，设置15分钟后更新")
+        }
         
-        return Timeline(entries: [entry], policy: .after(tomorrow))
+        print("Widget: 时间线生成完成，下次更新时间: \(nextUpdateDate)")
+        return Timeline(entries: [entry], policy: .after(nextUpdateDate))
     }
     
     // 获取今天的早餐状态
     private func getTodayBreakfastStatus() -> Bool? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let key = "breakfast_\(Int(today.timeIntervalSince1970))"
         
-        if BreakfastTracker.shared.object(forKey: key) != nil {
-            let status = BreakfastTracker.shared.bool(forKey: key)
-            print("Widget: 获取今天的早餐状态，key=\(key), status=\(status)")
-            return status
+        print("Widget: 正在获取今天(\(today))的早餐状态")
+        
+        // 使用与应用相同的数据存储方式和键名
+        let userDefaultsKey = "breakfastRecords"
+        
+        // 强制同步 UserDefaults
+        BreakfastTracker.shared.synchronize()
+        
+        if let data = BreakfastTracker.shared.data(forKey: userDefaultsKey) {
+            print("Widget: 从UserDefaults获取到数据")
+            let decoder = JSONDecoder()
+            if let recordsArray = try? decoder.decode([BreakfastRecord].self, from: data) {
+                print("Widget: 成功解码记录数组，共\(recordsArray.count)条记录")
+                
+                // 查找今天的记录
+                let todayTimestamp = today.timeIntervalSince1970
+                
+                // 打印所有记录的日期，便于调试
+                for record in recordsArray {
+                    let recordDate = Date(timeIntervalSince1970: record.date)
+                    let recordDay = calendar.startOfDay(for: recordDate)
+                    print("Widget: 记录日期 = \(recordDay), 状态 = \(record.hasEaten)")
+                }
+                
+                if let todayRecord = recordsArray.first(where: { 
+                    let recordDate = Date(timeIntervalSince1970: $0.date)
+                    let recordDay = calendar.startOfDay(for: recordDate)
+                    let isSameDay = calendar.isDate(recordDay, inSameDayAs: today)
+                    print("Widget: 比较日期 \(recordDay) 与今天 \(today): \(isSameDay)")
+                    return isSameDay
+                }) {
+                    print("Widget: 找到今天的早餐记录，状态=\(todayRecord.hasEaten)")
+                    return todayRecord.hasEaten
+                } else {
+                    print("Widget: 未找到今天的早餐记录")
+                }
+            } else {
+                print("Widget: 无法解码从UserDefaults加载的记录数据")
+            }
+        } else {
+            print("Widget: UserDefaults中没有找到breakfastRecords数据")
         }
         
-        print("Widget: 今天没有记录早餐状态，key=\(key)")
+        print("Widget: 今天没有记录早餐状态，返回nil")
         return nil
+    }
+    
+    // 确保小组件数据与应用数据一致，以应用数据为准
+    private func ensureDataConsistency() {
+        print("Widget: 开始执行数据一致性检查")
+        
+        // 强制同步 UserDefaults
+        BreakfastTracker.shared.synchronize()
+        
+        // 获取当前小组件显示的状态
+        let currentWidgetStatus = getTodayBreakfastStatus()
+        print("Widget: 当前小组件状态 = \(currentWidgetStatus?.description ?? "nil")")
+        
+        // 主动请求更新小组件
+        WidgetCenter.shared.reloadAllTimelines()
+        print("Widget: 已请求更新小组件以确保数据一致性")
     }
     
     // 计算连续天数
@@ -66,34 +136,69 @@ struct Provider: AppIntentTimelineProvider {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
-        // 检查今天是否已记录为已吃
-        let todayKey = "breakfast_\(Int(today.timeIntervalSince1970))"
-        if BreakfastTracker.shared.bool(forKey: todayKey) {
-            streak += 1
-            print("Widget: 今天已吃早餐，连续天数 +1")
-        } else if BreakfastTracker.shared.object(forKey: todayKey) != nil {
-            // 如果今天记录为没吃，则连续天数为0
-            print("Widget: 今天没吃早餐，连续天数为0")
-            return 0
-        }
-        
-        // 检查之前的连续天数
-        var currentDate = today
-        while true {
-            currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate)!
-            let key = "breakfast_\(Int(currentDate.timeIntervalSince1970))"
-            
-            if BreakfastTracker.shared.bool(forKey: key) {
-                streak += 1
-                print("Widget: \(calendar.dateComponents([.year, .month, .day], from: currentDate).day ?? 0)日已吃早餐，连续天数 +1")
-            } else {
-                print("Widget: \(calendar.dateComponents([.year, .month, .day], from: currentDate).day ?? 0)日没有记录或没吃早餐，连续天数计算结束")
-                break
+        // 从应用的共享数据中加载记录
+        if let data = BreakfastTracker.shared.data(forKey: "breakfastRecords") {
+            let decoder = JSONDecoder()
+            if let recordsArray = try? decoder.decode([BreakfastRecord].self, from: data) {
+                // 将记录转换为字典格式以便于查找
+                let records = Dictionary(uniqueKeysWithValues: recordsArray.map { 
+                    let date = Date(timeIntervalSince1970: $0.date)
+                    return (calendar.startOfDay(for: date), $0.hasEaten) 
+                })
+                
+                // 检查今天是否已记录为已吃
+                if let hasEatenToday = records[today], hasEatenToday {
+                    streak += 1
+                    print("Widget: 今天已吃早餐，连续天数 +1")
+                } else if records[today] != nil {
+                    // 如果今天记录为没吃，则连续天数为0
+                    print("Widget: 今天没吃早餐，连续天数为0")
+                    return 0
+                }
+                
+                // 检查之前的连续天数
+                var currentDate = today
+                while true {
+                    currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate)!
+                    if let hasEaten = records[currentDate], hasEaten {
+                        streak += 1
+                        print("Widget: \(calendar.dateComponents([.year, .month, .day], from: currentDate).day ?? 0)日已吃早餐，连续天数 +1")
+                    } else {
+                        print("Widget: \(calendar.dateComponents([.year, .month, .day], from: currentDate).day ?? 0)日没有记录或没吃早餐，连续天数计算结束")
+                        break
+                    }
+                }
             }
         }
         
         print("Widget: 计算连续天数结果：\(streak)")
         return streak
+    }
+}
+
+// 导入BreakfastRecord模型以便在Widget中使用
+struct BreakfastRecord: Codable, Identifiable {
+    var id: String { return String(date) }
+    let date: TimeInterval
+    let hasEaten: Bool
+    var note: String? = nil
+    
+    // 获取日期对象
+    var dateObject: Date {
+        return Date(timeIntervalSince1970: date)
+    }
+}
+
+// 共享的BreakfastTracker类型，用于与主应用共享数据
+struct BreakfastTracker {
+    // App Group identifier for sharing data with app
+    static let appGroupIdentifier = "group.com.masheal2333.EatBreakFirst"
+    
+    // Shared UserDefaults for app and widget
+    static var shared: UserDefaults {
+        let defaults = UserDefaults(suiteName: appGroupIdentifier) ?? UserDefaults.standard
+        print("Widget: 使用 UserDefaults，suiteName=\(appGroupIdentifier)")
+        return defaults
     }
 }
 
@@ -175,7 +280,7 @@ struct EatBreakfirstWidgetEntryView : View {
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(warningColor)
                             
-                            Text("明天要记得吃早饭")
+                            Text("明天要记得哟")
                                 .font(.system(size: 14))
                                 .foregroundColor(warningColor.opacity(0.8))
                         }
@@ -184,7 +289,7 @@ struct EatBreakfirstWidgetEntryView : View {
             } else {
                 // 未记录状态 - 显示按钮
                 VStack(spacing: 16) {
-                    Text("记录今天的早餐")
+                    Text("今天吃早餐了没?")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.primary)
                     
@@ -204,6 +309,7 @@ struct EatBreakfirstWidgetEntryView : View {
                             .background(successColor.opacity(0.1))
                             .cornerRadius(14)
                         }
+                        
                         .buttonStyle(ScaleButtonStyle())
                         .contentShape(Rectangle()) // 确保整个区域可点击
                         

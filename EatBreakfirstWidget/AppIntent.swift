@@ -28,20 +28,54 @@ struct MarkBreakfastEatenIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         print("Widget: MarkBreakfastEatenIntent.perform() 开始执行")
         
-        // 使用更简单的方式记录早餐状态
+        // 使用与应用相同的方式记录早餐状态
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
-        // 直接保存到 UserDefaults
-        let key = "breakfast_\(Int(today.timeIntervalSince1970))"
-        BreakfastTracker.shared.set(true, forKey: key)
-        BreakfastTracker.shared.synchronize()
+        // 从共享的UserDefaults中读取现有记录
+        var records: [Date: Bool] = [:]
+        if let data = BreakfastTracker.shared.data(forKey: "breakfastRecords") {
+            let decoder = JSONDecoder()
+            if let recordsArray = try? decoder.decode([BreakfastRecord].self, from: data) {
+                print("Widget: 成功从UserDefaults加载了\(recordsArray.count)条记录")
+                records = Dictionary(uniqueKeysWithValues: recordsArray.map { 
+                    (Date(timeIntervalSince1970: $0.date), $0.hasEaten) 
+                })
+            } else {
+                print("Widget: 无法解码从UserDefaults加载的记录数据")
+            }
+        } else {
+            print("Widget: UserDefaults中没有找到breakfastRecords数据")
+        }
         
-        print("Widget: 已记录今天已吃早餐，key=\(key)")
+        // 更新今天的记录
+        records[today] = true
+        
+        // 将更新后的记录保存回去
+        let encoder = JSONEncoder()
+        let recordsArray = records.map { BreakfastRecord(date: $0.key.timeIntervalSince1970, hasEaten: $0.value) }
+        if let encoded = try? encoder.encode(recordsArray) {
+            print("Widget: 正在保存\(recordsArray.count)条记录到UserDefaults")
+            BreakfastTracker.shared.set(encoded, forKey: "breakfastRecords")
+            BreakfastTracker.shared.synchronize()
+            print("Widget: 已记录今天已吃早餐，并执行了synchronize")
+        } else {
+            print("Widget: 编码记录数组失败")
+        }
         
         // 立即更新小组件
+        print("Widget: 强制刷新小组件")
         WidgetCenter.shared.reloadAllTimelines()
-        print("Widget: 已请求更新所有小组件")
+        
+        // 使用多次延迟更新，确保小组件能够获取到最新数据
+        let delayTimes = [0.3, 0.8, 2.0] // 多个时间点进行更新
+        
+        for (index, delay) in delayTimes.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                print("Widget: 第\(index + 1)次延迟更新小组件 (延迟\(delay)秒)")
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+        }
         
         print("Widget: MarkBreakfastEatenIntent.perform() 执行完成")
         return .result()
@@ -59,68 +93,58 @@ struct MarkBreakfastSkippedIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         print("Widget: MarkBreakfastSkippedIntent.perform() 开始执行")
         
-        // 使用更简单的方式记录早餐状态
+        // 使用与应用相同的方式记录早餐状态
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
-        // 直接保存到 UserDefaults
-        let key = "breakfast_\(Int(today.timeIntervalSince1970))"
-        BreakfastTracker.shared.set(false, forKey: key)
-        BreakfastTracker.shared.synchronize()
+        // 从共享的UserDefaults中读取现有记录
+        var records: [Date: Bool] = [:]
+        if let data = BreakfastTracker.shared.data(forKey: "breakfastRecords") {
+            let decoder = JSONDecoder()
+            if let recordsArray = try? decoder.decode([BreakfastRecord].self, from: data) {
+                print("Widget: 成功从UserDefaults加载了\(recordsArray.count)条记录")
+                records = Dictionary(uniqueKeysWithValues: recordsArray.map { 
+                    (Date(timeIntervalSince1970: $0.date), $0.hasEaten) 
+                })
+            } else {
+                print("Widget: 无法解码从UserDefaults加载的记录数据")
+            }
+        } else {
+            print("Widget: UserDefaults中没有找到breakfastRecords数据")
+        }
         
-        print("Widget: 已记录今天没吃早餐，key=\(key)")
+        // 更新今天的记录
+        records[today] = false
+        
+        // 将更新后的记录保存回去
+        let encoder = JSONEncoder()
+        let recordsArray = records.map { BreakfastRecord(date: $0.key.timeIntervalSince1970, hasEaten: $0.value) }
+        if let encoded = try? encoder.encode(recordsArray) {
+            print("Widget: 正在保存\(recordsArray.count)条记录到UserDefaults")
+            BreakfastTracker.shared.set(encoded, forKey: "breakfastRecords")
+            BreakfastTracker.shared.synchronize()
+            print("Widget: 已记录今天没吃早餐，并执行了synchronize")
+        } else {
+            print("Widget: 编码记录数组失败")
+        }
         
         // 立即更新小组件
+        print("Widget: 强制刷新小组件")
         WidgetCenter.shared.reloadAllTimelines()
-        print("Widget: 已请求更新所有小组件")
+        
+        // 使用多次延迟更新，确保小组件能够获取到最新数据
+        let delayTimes = [0.3, 0.8, 2.0] // 多个时间点进行更新
+        
+        for (index, delay) in delayTimes.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                print("Widget: 第\(index + 1)次延迟更新小组件 (延迟\(delay)秒)")
+                WidgetCenter.shared.reloadAllTimelines()
+            }
+        }
         
         print("Widget: MarkBreakfastSkippedIntent.perform() 执行完成")
         return .result()
     }
 }
 
-// 共享的BreakfastTracker类型，用于与主应用共享数据
-struct BreakfastTracker {
-    // App Group identifier for sharing data with app
-    static let appGroupIdentifier = "group.com.masheal2333.EatBreakFirst"
-    
-    // Shared UserDefaults for app and widget
-    static var shared: UserDefaults {
-        let defaults = UserDefaults(suiteName: appGroupIdentifier) ?? UserDefaults.standard
-        print("Widget: 使用 UserDefaults，suiteName=\(appGroupIdentifier)")
-        return defaults
-    }
-    
-    // 从小组件记录早餐的静态方法 - 保留但不再使用
-    static func recordBreakfastFromWidget(eaten: Bool) {
-        // 此方法保留但不再使用
-        print("Widget: recordBreakfastFromWidget 方法已弃用")
-    }
-    
-    // 检查并更新成就 - 保留但不再使用
-    private static func checkAndUpdateAchievements(eaten: Bool) {
-        // 此方法保留但不再使用
-        print("Widget: checkAndUpdateAchievements 方法已弃用")
-    }
-    
-    // 检查今天是否已经记录了早餐 - 保留但不再使用
-    static func hasEatenBreakfastToday() -> Bool? {
-        // 此方法保留但不再使用
-        print("Widget: hasEatenBreakfastToday 方法已弃用")
-        return nil
-    }
-    
-    // 获取当前连续记录天数 - 保留但不再使用
-    static func getCurrentStreak() -> Int {
-        // 此方法保留但不再使用
-        print("Widget: getCurrentStreak 方法已弃用")
-        return 0
-    }
-}
-
-// 用于记录的数据模型
-struct BreakfastRecord: Codable, Identifiable {
-    var id: String { return String(date) }
-    let date: TimeInterval
-    let hasEaten: Bool
-}
+// BreakfastRecord struct is already defined in EatBreakfirstWidget.swift
