@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-// 确保可以使用ColorExtensions.swift中定义的Color扩展
 // 导入早餐背景图片组件
 
 // Stats View
@@ -16,9 +15,15 @@ public struct StatsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var animateChart = false
     @State private var showDetails = false
+    @State private var refreshView = false // 添加刷新视图的状态
     
     private var weekdayNames: [String] {
-        ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        let language = UserRoleManager.shared.getCurrentLanguage()
+        if language == .english {
+            return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        } else {
+            return ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        }
     }
     
     // 获取每周真实数据
@@ -111,6 +116,24 @@ public struct StatsView: View {
             // 添加动画效果视图，避免重复代码
             animationEffect
         }
+        .onAppear {
+            // 添加语言变更通知监听
+            NotificationCenter.default.addObserver(forName: .appLanguageDidChange, object: nil, queue: .main) { _ in
+                refreshView.toggle() // 切换状态触发视图刷新
+            }
+            
+            // 延迟启动动画
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 1.0)) {
+                    animateChart = true
+                }
+            }
+        }
+        .onDisappear {
+            // 移除通知监听
+            NotificationCenter.default.removeObserver(self, name: .appLanguageDidChange, object: nil)
+        }
+        .id(refreshView) // 使用id强制视图在refreshView变化时重新创建
     }
     
     // 背景渐变
@@ -129,7 +152,7 @@ public struct StatsView: View {
     // 头部视图
     private var headerView: some View {
         HStack {
-            Text("早餐统计")
+            Text(L(.statistics))
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(colorScheme == .dark ? .white : .black)
             
@@ -162,7 +185,7 @@ public struct StatsView: View {
     private var summaryCardView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("早餐数据概览")
+                Text(L(.breakfastDataOverview))
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(Color.primaryText)
                 
@@ -180,7 +203,7 @@ public struct StatsView: View {
                 // 早餐天数
                 statCardView(
                     value: stats.daysEaten,
-                    label: "早餐天数",
+                    label: L(.breakfastDays),
                     icon: "takeoutbag.and.cup.and.straw.fill",
                     color: Color.categoryConsistency,
                     backgroundColor: Color.categoryConsistency.opacity(0.1)
@@ -189,7 +212,7 @@ public struct StatsView: View {
                 // 未吃早餐
                 statCardView(
                     value: stats.daysSkipped,
-                    label: "未吃早餐",
+                    label: L(.skippedBreakfast),
                     icon: "xmark.circle.fill",
                     color: Color(hex: "F44336"),
                     backgroundColor: Color(hex: "F44336").opacity(0.1)
@@ -198,7 +221,7 @@ public struct StatsView: View {
                 // 当前连续
                 statCardView(
                     value: stats.currentStreak,
-                    label: "当前连续",
+                    label: L(.currentStreak),
                     icon: "flame.fill",
                     color: Color.categoryStreak,
                     backgroundColor: Color.categoryStreak.opacity(0.1)
@@ -207,7 +230,7 @@ public struct StatsView: View {
                 // 最长纪录
                 statCardView(
                     value: stats.longestStreak,
-                    label: "最长纪录",
+                    label: L(.longestRecord),
                     icon: "trophy.fill",
                     color: Color.categoryMilestone,
                     backgroundColor: Color.categoryMilestone.opacity(0.1)
@@ -262,9 +285,9 @@ public struct StatsView: View {
     private var completionRateCardView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("早餐完成率")
+                Text(L(.completionRate))
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(colorScheme == .dark ? Color.primaryText : .black)
+                    .foregroundColor(Color.primaryText)
                 
                 Spacer()
                 
@@ -284,13 +307,13 @@ public struct StatsView: View {
             VStack(spacing: 15) {
                 // 近30天进度条
                 HStack {
-                    Text("近期记录")
+                    Text(L(.recentRecord))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                     
                     Spacer()
                     
-                    Text("\(stats.recentDaysEaten)/\(stats.recentDaysTracked) 天")
+                    Text("\(stats.recentDaysEaten)/\(stats.recentDaysTracked) \(L(.daysUnit))")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                 }
@@ -316,13 +339,13 @@ public struct StatsView: View {
                 
                 // 全部记录进度条
                 HStack {
-                    Text("全部记录")
+                    Text(L(.allRecord))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                     
                     Spacer()
                     
-                    Text("\(stats.daysEaten)/\(stats.totalDaysTracked) 天")
+                    Text("\(stats.daysEaten)/\(stats.totalDaysTracked) \(L(.daysUnit))")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                 }
@@ -377,7 +400,7 @@ public struct StatsView: View {
     private var weeklyTrendCardView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("早餐习惯洞察")
+                Text(L(.weeklyTrend))
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(Color.primaryText)
                 
@@ -388,9 +411,9 @@ public struct StatsView: View {
                         showDetails.toggle()
                     }
                 }) {
-                    Image(systemName: showDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(getCompletionRateColor(rate: stats.completionRate))
+                    Text(showDetails ? L(.hideDetails) : L(.showDetails))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color.accentColor)
                 }
             }
             .padding(.horizontal, 20)
@@ -403,7 +426,7 @@ public struct StatsView: View {
                     HStack(spacing: 15) {
                         // 最佳日卡片
                         VStack(spacing: 8) {
-                            Text("最佳表现")
+                            Text(L(.bestPerformance))
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(Color.secondaryText)
                             
@@ -425,7 +448,7 @@ public struct StatsView: View {
                         
                         // 最差日卡片
                         VStack(spacing: 8) {
-                            Text("需要改进")
+                            Text(L(.needImprovement))
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(Color.secondaryText)
                             
@@ -449,7 +472,7 @@ public struct StatsView: View {
                     
                     // 平均每周早餐天数
                     VStack(spacing: 10) {
-                        Text("平均每周早餐天数")
+                        Text(L(.weeklyAverageBreakfast))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color.secondaryText)
                         
@@ -458,7 +481,7 @@ public struct StatsView: View {
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                                 .foregroundColor(Color.primaryText)
                             
-                            Text("天")
+                            Text(L(.daysUnit))
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(Color.secondaryText)
                                 .padding(.leading, 2)
@@ -494,17 +517,11 @@ public struct StatsView: View {
     
     // 动画效果
     private var animationEffect: some View {
-        Color.clear
-            .onAppear {
-                // 简化动画逻辑，使用更直接的方式
-                let delayTime = 0.3
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + delayTime) {
-                    withAnimation {
-                        animateChart = true
-                    }
-                }
+        Group {
+            if animateChart {
+                // 无需修改
             }
+        }
     }
     
     // 根据完成率获取对应的颜色
@@ -532,15 +549,15 @@ public struct StatsView: View {
     private func getCompletionRateAssessment(rate: Double) -> String {
         // 使用简单的条件语句替代switch语句
         if rate < 30 {
-            return "需要努力提升"
+            return L(.needEffortToImprove)
         } else if rate < 50 {
-            return "有待改进"
+            return L(.roomForImprovement)
         } else if rate < 70 {
-            return "表现一般"
+            return L(.averagePerformance)
         } else if rate < 90 {
-            return "表现不错"
+            return L(.goodPerformance)
         } else {
-            return "非常出色"
+            return L(.excellentPerformance)
         }
     }
 }

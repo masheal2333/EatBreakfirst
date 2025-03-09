@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-// 确保可以使用ColorExtensions.swift中定义的Color扩展
 // 导入早餐背景图片组件
 
 // Achievement Views
@@ -17,6 +16,7 @@ public struct AchievementsView: View {
     @State private var selectedAchievement: Achievement? = nil
     @State private var animateCards = true
     @EnvironmentObject private var breakfastTracker: BreakfastTracker
+    @State private var refreshView = false // 添加刷新视图的状态
     
     // 按类别分组成就
     private var achievementsByCategory: [AchievementCategory: [Achievement]] {
@@ -50,7 +50,7 @@ public struct AchievementsView: View {
             VStack(spacing: 0) {
                 // Header with title and close button
                 HStack {
-                    Text("成就")
+                    Text(L(.achievements))
                         .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(colorScheme == .dark ? .white : .black)
                     
@@ -73,7 +73,7 @@ public struct AchievementsView: View {
                 
                 VStack(spacing: 8) {
                     HStack {
-                        Text("解锁进度")
+                        Text(L(.unlockProgress))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(Color.primaryText)
                         
@@ -131,7 +131,24 @@ public struct AchievementsView: View {
         .onAppear {
             // 移除动画延迟
             animateCards = true
+            
+            // 添加语言变更通知监听
+            NotificationCenter.default.addObserver(forName: .appLanguageDidChange, object: nil, queue: .main) { _ in
+                // 刷新成就数据
+                self.breakfastTracker.refreshAchievements()
+                // 切换状态触发视图刷新
+                self.refreshView.toggle()
+            }
         }
+        .onDisappear {
+            // 移除语言变更通知监听
+            NotificationCenter.default.removeObserver(
+                self,
+                name: .appLanguageDidChange,
+                object: nil
+            )
+        }
+        .id(refreshView) // 使用id强制视图在refreshView变化时重新创建
     }
     
     // 根据类别获取颜色
@@ -198,7 +215,7 @@ public struct CategorySection: View {
                     .foregroundColor(getCategoryColor())
                     .shadow(color: getCategoryColor().opacity(0.2), radius: 1, x: 0, y: 0)
                 
-                Text(category.rawValue)
+                Text(category.localizedName)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(Color.primaryText)
                 
@@ -253,8 +270,8 @@ public struct AchievementCard: View {
                     .shadow(color: achievement.isUnlocked ? Color.white.opacity(0.3) : Color.clear, radius: 1, x: 0, y: 0)
             }
             
-            // Achievement name
-            Text(achievement.name)
+            // Achievement name - 使用本地化名称
+            Text(achievement.localizedName)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundColor(Color.primaryText)
                 .multilineTextAlignment(.center)
@@ -267,7 +284,7 @@ public struct AchievementCard: View {
                         .foregroundColor(Color.categoryConsistency)
                         .font(.system(size: 12))
                     
-                    Text("已解锁")
+                    Text(L(.unlocked))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color.categoryConsistency)
                 } else {
@@ -275,7 +292,7 @@ public struct AchievementCard: View {
                         .foregroundColor(Color.secondaryText)
                         .font(.system(size: 12, weight: .medium))
                     
-                    Text("\(breakfastTracker.streakCount)/\(achievement.requirement)天")
+                    Text("\(breakfastTracker.streakCount)/\(achievement.requirement)\(L(.daysUnit))")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                 }
@@ -311,7 +328,7 @@ public struct AchievementUnlockedView: View {
                     .foregroundColor(Color.forCategory(achievement.category))
                     .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                 
-                Text(achievement.category.rawValue)
+                Text(achievement.category.localizedName)
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundColor(Color.forCategory(achievement.category))
             }
@@ -326,7 +343,7 @@ public struct AchievementUnlockedView: View {
                     .strokeBorder(Color.forCategory(achievement.category).opacity(0.3), lineWidth: 1)
             )
             
-            Text("成就解锁！")
+            Text(L(.achievementUnlocked))
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundColor(Color.primaryText)
                 .shadow(color: Color.forCategory(achievement.category).opacity(0.3), radius: 1, x: 0, y: 0)
@@ -417,13 +434,13 @@ public struct AchievementUnlockedView: View {
             }
             .padding(.vertical, 20)
             
-            Text(achievement.name)
+            Text(achievement.localizedName)
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(Color.primaryText)
                 .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                 .multilineTextAlignment(.center)
             
-            Text(achievement.description)
+            Text(achievement.localizedDescription)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(Color.primaryText.opacity(0.9))
                 .multilineTextAlignment(.center)
@@ -437,7 +454,7 @@ public struct AchievementUnlockedView: View {
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.forCategory(achievement.category).opacity(0.8))
                     
-                    Text("解锁时间: \(formatDate(unlockDate))")
+                    Text(String(format: L(.unlockTimeDetail), formatDate(unlockDate)))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.forCategory(achievement.category).opacity(0.8))
                 }
@@ -451,7 +468,7 @@ public struct AchievementUnlockedView: View {
             }
             
             Button(action: onDismiss) {
-                Text("很好!")
+                Text(L(.confirm))
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -556,7 +573,7 @@ public struct AchievementDetailView: View {
                                 .foregroundColor(Color.forCategory(achievement.category))
                                 .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                             
-                            Text(achievement.category.rawValue)
+                            Text(achievement.category.localizedName)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundColor(Color.forCategory(achievement.category))
                         }
@@ -610,9 +627,9 @@ public struct AchievementDetailView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 10)
                         
-                        // Achievement name and status
+                        // Achievement name and status - 使用本地化名称
                         VStack(spacing: 8) {
-                            Text(achievement.name)
+                            Text(achievement.localizedName)
                                 .font(.system(size: 28, weight: .bold, design: .rounded))
                                 .foregroundColor(Color.primaryText)
                                 .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
@@ -625,7 +642,7 @@ public struct AchievementDetailView: View {
                                         .font(.system(size: 16, weight: .medium))
                                         .shadow(color: Color.categoryConsistency.opacity(0.3), radius: 1, x: 0, y: 0)
                                     
-                                    Text("已解锁")
+                                    Text(L(.unlocked))
                                         .font(.system(size: 16, weight: .bold, design: .rounded))
                                         .foregroundColor(Color.categoryConsistency)
                                         .shadow(color: Color.categoryConsistency.opacity(0.2), radius: 1, x: 0, y: 0)
@@ -644,7 +661,7 @@ public struct AchievementDetailView: View {
                                         .font(.system(size: 16, weight: .medium))
                                         .shadow(color: Color.secondaryText.opacity(0.1), radius: 1, x: 0, y: 0)
                                     
-                                    Text("未解锁 • 需连续\(achievement.requirement)天")
+                                    Text(String(format: L(.notUnlocked), achievement.requirement))
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundColor(Color.secondaryText.opacity(0.9))
                                 }
@@ -655,7 +672,7 @@ public struct AchievementDetailView: View {
                                 VStack(spacing: 8) {
                                     GeometryReader { geometry in
                                         HStack {
-                                            Text("当前进度")
+                                            Text(L(.currentProgress))
                                                 .font(.system(size: 14, weight: .medium))
                                                 .foregroundColor(Color.secondaryText)
                                             
@@ -702,14 +719,14 @@ public struct AchievementDetailView: View {
                         }
                         .padding(.bottom, 20)
                         
-                        // Achievement description card
+                        // Achievement description card - 使用本地化描述
                         VStack(alignment: .leading, spacing: 16) {
-                            Text("成就详情")
+                            Text(L(.achievementDetails))
                                 .font(.system(size: 18, weight: .bold, design: .rounded))
                                 .foregroundColor(Color.forCategory(achievement.category))
                                 .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                             
-                            Text(achievement.description)
+                            Text(achievement.localizedDescription)
                                 .font(.system(size: 16, weight: .regular))
                                 .foregroundColor(Color.primaryText.opacity(0.9))
                                 .fixedSize(horizontal: false, vertical: true)
@@ -717,7 +734,7 @@ public struct AchievementDetailView: View {
                             
                             if !achievement.isUnlocked {
                                 VStack(alignment: .leading, spacing: 10) {
-                                    Text("如何获得")
+                                    Text(L(.howToGet))
                                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                                         .foregroundColor(Color.forCategory(achievement.category))
                                     
@@ -727,7 +744,7 @@ public struct AchievementDetailView: View {
                                             .foregroundColor(Color.forCategory(achievement.category))
                                             .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                                         
-                                        Text("连续\(achievement.requirement)天记录早餐")
+                                        Text(String(format: L(.consecutiveDaysRequired), achievement.requirement))
                                             .font(.system(size: 15, weight: .medium))
                                             .foregroundColor(Color.primaryText.opacity(0.9))
                                     }
@@ -735,7 +752,7 @@ public struct AchievementDetailView: View {
                                 .padding(.top, 10)
                             } else if let unlockDate = achievement.unlockDate {
                                 VStack(alignment: .leading, spacing: 10) {
-                                    Text("解锁信息")
+                                    Text(L(.unlockInfo))
                                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                                         .foregroundColor(Color.forCategory(achievement.category))
                                     
@@ -745,7 +762,7 @@ public struct AchievementDetailView: View {
                                             .foregroundColor(Color.forCategory(achievement.category))
                                             .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                                         
-                                        Text("解锁时间: \(formatDate(unlockDate))")
+                                        Text(String(format: L(.unlockTime), formatDate(unlockDate)))
                                             .font(.system(size: 15, weight: .medium))
                                             .foregroundColor(Color.primaryText.opacity(0.9))
                                     }
@@ -768,14 +785,14 @@ public struct AchievementDetailView: View {
                         
                         // Tips or congratulations message
                         VStack(alignment: .leading, spacing: 16) {
-                            Text(achievement.isUnlocked ? "恭喜你!" : "小贴士")
+                            Text(achievement.isUnlocked ? L(.congratsMessage) : L(.achievementTips))
                                 .font(.system(size: 18, weight: .bold, design: .rounded))
                                 .foregroundColor(Color.forCategory(achievement.category))
                                 .shadow(color: Color.forCategory(achievement.category).opacity(0.2), radius: 1, x: 0, y: 0)
                             
                             Text(achievement.isUnlocked ? 
-                                 "你已经成功解锁了这个成就，继续保持良好的早餐习惯吧！" : 
-                                 "每天吃早餐对健康非常重要，坚持记录并养成良好的早餐习惯。")
+                                 L(.achievementCongratsText) : 
+                                 L(.achievementTipsText))
                                 .font(.system(size: 16, weight: .regular))
                                 .foregroundColor(Color.primaryText.opacity(0.9))
                                 .fixedSize(horizontal: false, vertical: true)
@@ -790,7 +807,7 @@ public struct AchievementDetailView: View {
                                         Image(systemName: "square.and.arrow.up")
                                             .font(.system(size: 14, weight: .medium))
                                         
-                                        Text("分享成就")
+                                        Text(L(.shareAchievement))
                                             .font(.system(size: 14, weight: .semibold))
                                     }
                                     .padding(.horizontal, 16)

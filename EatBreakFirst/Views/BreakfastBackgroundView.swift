@@ -16,9 +16,9 @@ public struct BreakfastImagesBackground: View {
     
     // 早餐图片集合 - 使用SF Symbols中的食物图标模拟真实图片
     private let breakfastImages: [BreakfastImage] = [
-        BreakfastImage(symbols: ["croissant.fill", "cup.and.saucer.fill"], title: "牛角面包和咖啡", colors: [Color.categoryMilestone.opacity(0.8), Color.categorySpecial.opacity(0.6)]),
-        BreakfastImage(symbols: ["egg.fill", "carrot.fill", "leaf.fill"], title: "健康早餐", colors: [Color.categoryMilestone.opacity(0.7), Color.categoryConsistency.opacity(0.7)]),
-        BreakfastImage(symbols: ["mug.fill", "takeoutbag.and.cup.and.straw.fill"], title: "早餐饮品", colors: [Color.categoryStreak.opacity(0.6), Color.categoryMilestone.opacity(0.5)])
+        BreakfastImage(symbols: ["croissant.fill", "cup.and.saucer.fill"], title: "Croissant & Coffee", colors: [Color.categoryMilestone.opacity(0.8), Color.categorySpecial.opacity(0.6)]),
+        BreakfastImage(symbols: ["egg.fill", "carrot.fill", "leaf.fill"], title: "Healthy Breakfast", colors: [Color.categoryMilestone.opacity(0.7), Color.categoryConsistency.opacity(0.7)]),
+        BreakfastImage(symbols: ["mug.fill", "takeoutbag.and.cup.and.straw.fill"], title: "Morning Drinks", colors: [Color.categoryStreak.opacity(0.6), Color.categoryMilestone.opacity(0.5)])
     ]
     
     public var body: some View {
@@ -51,11 +51,6 @@ public struct BreakfastImagesBackground: View {
                                         .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 3)
                                 }
                             }
-                            
-                            Text(breakfastImages[currentImageIndex].title)
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(colorScheme == .dark ? .white.opacity(0.8) : .black.opacity(0.7))
-                                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                         }
                         .offset(y: geometry.size.height * 0.15)
                     }

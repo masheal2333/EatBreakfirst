@@ -60,6 +60,58 @@ struct Achievement: Identifiable, Equatable {
         return lhs.id == rhs.id
     }
     
+    // 获取本地化的成就名称
+    var localizedName: String {
+        let language = UserRoleManager.shared.getCurrentLanguage()
+        
+        // 根据名称和语言返回对应的本地化文本
+        if language == .english {
+            switch name {
+            case "第一步": return "First Step"
+            case "一周坚持": return "One Week Streak"
+            case "坚持不懈": return "Persistence"
+            case "习惯养成": return "Habit Formation"
+            case "生活大师": return "Life Master"
+            default: return name
+            }
+        } else {
+            switch name {
+            case "First Step": return "第一步"
+            case "One Week Streak": return "一周坚持"
+            case "Persistence": return "坚持不懈"
+            case "Habit Formation": return "习惯养成"
+            case "Life Master": return "生活大师"
+            default: return name
+            }
+        }
+    }
+    
+    // 获取本地化的成就描述
+    var localizedDescription: String {
+        let language = UserRoleManager.shared.getCurrentLanguage()
+        
+        // 根据描述和语言返回对应的本地化文本
+        if language == .english {
+            switch description {
+            case "记录你的第一个早餐": return "Record your first breakfast"
+            case "连续7天吃早餐": return "Eat breakfast for 7 consecutive days"
+            case "连续14天吃早餐": return "Eat breakfast for 14 consecutive days"
+            case "连续21天吃早餐": return "Eat breakfast for 21 consecutive days"
+            case "连续30天吃早餐": return "Eat breakfast for 30 consecutive days"
+            default: return description
+            }
+        } else {
+            switch description {
+            case "Record your first breakfast": return "记录你的第一个早餐"
+            case "Eat breakfast for 7 consecutive days": return "连续7天吃早餐"
+            case "Eat breakfast for 14 consecutive days": return "连续14天吃早餐"
+            case "Eat breakfast for 21 consecutive days": return "连续21天吃早餐"
+            case "Eat breakfast for 30 consecutive days": return "连续30天吃早餐"
+            default: return description
+            }
+        }
+    }
+    
     // 获取成就进度百分比
     func progressPercentage(currentStreak: Int) -> Double {
         guard !isUnlocked else { return 100.0 }
@@ -115,6 +167,28 @@ enum AchievementCategory: String, Codable {
         case .consistency: return "calendar.badge.clock"
         case .milestone: return "trophy.fill"
         case .special: return "star.fill"
+        }
+    }
+    
+    // 添加本地化支持
+    var localizedName: String {
+        let language = UserRoleManager.shared.getCurrentLanguage()
+        
+        switch language {
+        case .english:
+            switch self {
+            case .streak: return "Streak"
+            case .consistency: return "Consistency"
+            case .milestone: return "Milestone"
+            case .special: return "Special"
+            }
+        case .chinese:
+            switch self {
+            case .streak: return "连续记录"
+            case .consistency: return "坚持不懈"
+            case .milestone: return "里程碑"
+            case .special: return "特殊成就"
+            }
         }
     }
 }

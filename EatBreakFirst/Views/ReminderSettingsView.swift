@@ -118,8 +118,8 @@ struct ReminderSettingsView: View {
     /// 创建测试通知内容
     private func createTestNotificationContent() -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
-        content.title = "测试通知 - 该吃早餐啦！🍳"
-        content.body = "这是一条测试通知。实际提醒将在每天 \(formatTime(self.reminderTime)) 发送。"
+        content.title = L(.testNotificationTitle)
+        content.body = String(format: L(.testNotificationBody), formatTime(self.reminderTime))
         content.sound = .default
         return content
     }
@@ -198,37 +198,37 @@ struct ReminderSettingsView: View {
                     .padding(.top, 20)
                 }
             }
-            .navigationTitle("早餐提醒设置")
+            .navigationTitle(L(.reminderSettings))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
+                    Button(L(.done)) {
                         dismiss()
                     }
                     .foregroundColor(accentColor)
                     .fontWeight(.medium)
                 }
             }
-            .alert("需要通知权限", isPresented: $showNotificationAlert) {
-                Button("取消", role: .cancel) { }
-                Button("去设置") {
+            .alert(L(.needNotificationPermission), isPresented: $showNotificationAlert) {
+                Button(L(.cancel), role: .cancel) { }
+                Button(L(.goToSettings)) {
                     // 打开系统设置
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
                 }
             } message: {
-                Text("要接收早餐提醒，请在设置中允许通知权限。")
+                Text(L(.notificationPermissionMessage))
             }
             // 添加自定义的权限说明弹窗
-            .alert("允许发送通知", isPresented: $showPermissionExplanationAlert) {
-                Button("取消", role: .cancel) {
+            .alert(L(.allowNotifications), isPresented: $showPermissionExplanationAlert) {
+                Button(L(.cancel), role: .cancel) {
                     // 用户取消，恢复开关状态
                     isReminderEnabled = false
                     showTimePickerAnimation = false
                     isRequestingPermission = false
                 }
-                Button("允许") {
+                Button(L(.allowButton)) {
                     // 用户同意，请求系统权限
                     isRequestingPermission = true
                     breakfastTracker.requestNotificationPermission { granted in
@@ -252,7 +252,7 @@ struct ReminderSettingsView: View {
                     }
                 }
             } message: {
-                Text("我们需要发送通知来提醒您吃早餐。这将帮助您养成健康的早餐习惯。")
+                Text(L(.notificationExplanationMessage))
             }
             // 添加测试通知发送成功提示
             .overlay(
@@ -263,7 +263,7 @@ struct ReminderSettingsView: View {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.green)
-                                Text("测试通知已发送，请等待5秒")
+                                Text(L(.testNotificationSent))
                                     .font(.system(size: 15, weight: .medium))
                             }
                             .padding()
@@ -332,7 +332,7 @@ private struct TimePickerView: View {
                             .foregroundColor(accentColor)
                             .frame(width: 30)
                         
-                        Text("提醒时间")
+                        Text(L(.reminderTime))
                             .font(.system(size: 16, weight: .medium))
                         
                         Spacer()
@@ -359,9 +359,9 @@ private struct TimePickerView: View {
                     }
                     
                     // 显示当前选择的时间
-                    Text("每天 \(formatTime(reminderTime)) 提醒您吃早餐")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.secondary)
+                    Text(String(format: L(.dailyReminderTime), formatTime(reminderTime)))
+                        .font(.system(size: 15))
+                        .foregroundColor(Color.secondaryText)
                         .padding(.bottom, 16)
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -393,7 +393,7 @@ private struct ReminderToggleView: View {
                 .foregroundColor(accentColor)
                 .frame(width: 30)
             
-            Text("启用早餐提醒")
+            Text(L(.enableBreakfastReminder))
                 .font(.system(size: 16, weight: .medium))
             
             Spacer()
@@ -481,12 +481,12 @@ private struct InformationCardView: View {
                     .foregroundColor(accentColor)
                     .font(.system(size: 18))
                 
-                Text("关于早餐提醒")
+                Text(L(.aboutBreakfastReminder))
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(accentColor)
             }
             
-            Text("每天按时吃早餐有助于建立健康的生活习惯。我们会在您设定的时间发送提醒，帮助您坚持这个好习惯。")
+            Text(L(.reminderExplanation))
                 .font(.system(size: 15))
                 .foregroundColor(.secondary)
                 .lineSpacing(4)
@@ -517,19 +517,19 @@ private struct NotificationPreviewCardView: View {
                     .foregroundColor(.orange)
                     .font(.system(size: 18))
                 
-                Text("提醒内容预览")
+                Text(L(.reminderPreview))
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.orange)
             }
             
             // 通知预览
             VStack(alignment: .leading, spacing: 8) {
-                Text("该吃早餐啦！🍳")
+                Text(L(.reminderTitle))
                     .font(.system(size: 16, weight: .bold))
                 
-                Text("早上好！记得吃早餐，健康的一天从现在开始。不要错过今天的能量补充！")
+                Text(L(.reminderBody))
                     .font(.system(size: 14))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.secondaryText)
                     .lineSpacing(2)
             }
             .padding()
@@ -547,7 +547,7 @@ private struct NotificationPreviewCardView: View {
                         .font(.system(size: 16))
                         .foregroundColor(.white)
                     
-                    Text("测试通知")
+                    Text(L(.testNotification))
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.white)
                 }

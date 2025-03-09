@@ -14,6 +14,21 @@ enum UserRole: String {
     case user
 }
 
+// 支持的语言枚举
+enum AppLanguage: String, CaseIterable {
+    case chinese = "zh"
+    case english = "en"
+    
+    var displayName: String {
+        switch self {
+        case .chinese:
+            return "简体中文"
+        case .english:
+            return "English"
+        }
+    }
+}
+
 // 用户角色管理器
 class UserRoleManager {
     // 单例模式
@@ -22,10 +37,14 @@ class UserRoleManager {
     // 私有初始化方法
     private init() {
         loadUserRole()
+        loadLanguageSettings()
     }
     
     // 当前用户角色
     private(set) var currentRole: UserRole = .user
+    
+    // 当前语言设置
+    private(set) var currentLanguage: AppLanguage = .chinese
     
     // 管理员账号列表
     private let adminAccounts = ["masheal2333@gmail.com"]
@@ -58,6 +77,44 @@ class UserRoleManager {
             // 发送角色变更通知
             NotificationCenter.default.post(name: .userRoleDidChange, object: nil)
         }
+    }
+    
+    // 加载语言设置
+    private func loadLanguageSettings() {
+        if let savedLanguage = UserDefaults.standard.string(forKey: "appLanguage"),
+           let language = AppLanguage(rawValue: savedLanguage) {
+            currentLanguage = language
+            print("从缓存加载语言设置: \(language.displayName)")
+        } else {
+            // 默认根据系统语言选择
+            currentLanguage = getSystemLanguage()
+            UserDefaults.standard.set(currentLanguage.rawValue, forKey: "appLanguage")
+            print("设置默认语言为: \(currentLanguage.displayName)")
+        }
+    }
+    
+    // 获取当前语言
+    func getCurrentLanguage() -> AppLanguage {
+        return currentLanguage
+    }
+    
+    // 获取系统语言
+    private func getSystemLanguage() -> AppLanguage {
+        let preferredLanguage = Locale.preferredLanguages.first ?? "en"
+        // 如果系统语言包含zh，则使用中文，否则使用英文
+        return preferredLanguage.contains("zh") ? .chinese : .english
+    }
+    
+    // 切换语言
+    func switchLanguage(to language: AppLanguage) {
+        guard language != currentLanguage else { return }
+        
+        currentLanguage = language
+        UserDefaults.standard.set(language.rawValue, forKey: "appLanguage")
+        
+        // 发送语言变更通知
+        NotificationCenter.default.post(name: .appLanguageDidChange, object: nil)
+        print("已切换语言为: \(language.displayName)")
     }
     
     // 获取 Apple 账号
@@ -175,4 +232,5 @@ class UserRoleManager {
 // 通知名称扩展
 extension Notification.Name {
     static let userRoleDidChange = Notification.Name("userRoleDidChange")
+    static let appLanguageDidChange = Notification.Name("appLanguageDidChange")
 } 

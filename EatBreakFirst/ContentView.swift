@@ -7,7 +7,6 @@
 
 import SwiftUI
 import UserNotifications
-import UIKit
 // 导入早餐背景视图组件
 
 struct ContentView: View {
@@ -17,6 +16,7 @@ struct ContentView: View {
     @State private var showStats = false
     @State private var showAchievements = false
     @State private var showReminderSettings = false
+    @State private var showLanguageSettings = false // 添加语言设置状态
     @State private var showCalendar = false // 控制日历视图显示
     @State private var sunOffset: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
@@ -27,6 +27,8 @@ struct ContentView: View {
     @State private var canSelectToday: Bool = true
     // 添加用户角色状态
     @State private var isAdmin: Bool = false
+    // 添加刷新视图状态
+    @State private var refreshView: Bool = false
     
     // 使用新的颜色系统 - 灵感来自斯德哥尔摩设计学院的色彩理论
     private let accentColor = Color.accentColor     // 主题蓝色 - 沉稳而专业
@@ -51,7 +53,7 @@ struct ContentView: View {
                     
                     // 早餐食物图案背景
                     // 暂时注释掉新组件，等我们解决导入问题
-                    // BreakfastImagesBackground()
+                    BreakfastImagesBackground()
                 }
                 .ignoresSafeArea()
                 
@@ -103,6 +105,25 @@ struct ContentView: View {
                         
                         Spacer()
                         
+                        // 添加语言设置按钮
+                        Button(action: { showLanguageSettings.toggle() }) {
+                            Image(systemName: "globe")
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
+                                .font(.system(size: 22, weight: .medium))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Circle())
+                                .background(
+                                    Circle()
+                                        .fill(Color.primary.opacity(0.05))
+                                        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+                                )
+                        }
+                        .buttonStyle(SimpleButtonStyle())
+                        .hapticFeedback()
+                        
+                        Spacer()
+                        
                         // Trophy button with matching style
                         Button(action: { showAchievements.toggle() }) {
                             Image(systemName: "trophy.fill")
@@ -131,7 +152,7 @@ struct ContentView: View {
                             // Question View - Inspired by Dieter Rams' principle of "As little design as possible"
                             VStack(spacing: 40) {
                                 // Question text with refined typography
-                                Text("今天吃了早餐吗？")
+                                Text(L(.eatBreakfastQuestion))
                                     .font(.system(size: 36, weight: .bold, design: .rounded))
                                     .tracking(-0.5) // 更紧凑的字母间距，增加优雅感
                                     .foregroundColor(colorScheme == .dark ? Color.primaryText : .black)
@@ -222,12 +243,12 @@ struct ContentView: View {
                                     .foregroundColor(accentColor)
                                     .padding(.bottom, 20)
                                 
-                                Text("今天已经记录了早餐状态")
+                                Text(L(.alreadyRecorded))
                                     .font(.system(size: 24, weight: .bold, design: .rounded))
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.primary)
                                 
-                                Text("请明天凌晨 12:00 后再来记录")
+                                Text(L(.comeBackTomorrow))
                                     .font(.system(size: 18))
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.secondary)
@@ -246,7 +267,7 @@ struct ContentView: View {
                         // Success View - Refined with Dieter Rams' principles
                         VStack(spacing: 36) {
                             // Congratulations text with refined typography
-                            Text("牛哇牛哇！")
+                            Text(L(.congratulations))
                                 .font(.system(size: 40, weight: .bold, design: .rounded))
                                 .tracking(-0.5)
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
@@ -261,7 +282,7 @@ struct ContentView: View {
                                 }
                             }) {
                                 HStack {
-                                    Text("连续 \(breakfastTracker.streakCount) 天吃了早饭")
+                                    Text(L(.streakCount(breakfastTracker.streakCount)))
                                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                                         .foregroundColor(colorScheme == .dark ? .white : .black)
                                     
@@ -304,7 +325,7 @@ struct ContentView: View {
                         
                         // 如果不能选择今天的早餐状态，显示一个提示
                         if !breakfastTracker.canSelectBreakfastToday() {
-                            Text("今天已记录，明天再来")
+                            Text(L(.recordedToday))
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.secondary)
                                 .padding(.top, 30) // 增加顶部边距，确保与日历有足够间距
@@ -322,7 +343,7 @@ struct ContentView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.counterclockwise")
                                         .font(.system(size: 14))
-                                    Text("清除今天的记录")
+                                    Text(L(.clearTodayRecord))
                                         .font(.system(size: 14, weight: .medium))
                                 }
                                 .foregroundColor(.secondary)
@@ -371,7 +392,7 @@ struct ContentView: View {
                             .padding(.bottom, 10)
                             
                             // Reminder text with refined typography
-                            Text("明天要记得吃早饭")
+                            Text(L(.rememberTomorrow))
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
                                 .tracking(-0.5) // 更紧凑的字母间距
                                 .foregroundColor(accentColor)
@@ -379,7 +400,7 @@ struct ContentView: View {
                                 .shadow(color: accentColor.opacity(0.15), radius: 2, x: 0, y: 1)
                             
                             // Subtitle with subtle styling
-                            Text("健康的一天从早餐开始")
+                            Text(L(.healthyDayStart))
                                 .font(.system(size: 18, weight: .medium, design: .rounded))
                                 .foregroundColor(Color.secondaryText)
                                 .multilineTextAlignment(.center)
@@ -390,7 +411,7 @@ struct ContentView: View {
                                 Button(action: {
                                     // 直接显示时间选择器而不是设置页面
                                     let alertController = UIAlertController(
-                                        title: "设置早餐提醒时间",
+                                        title: L(.selectReminderTime),
                                         message: "请选择每天提醒的时间",
                                         preferredStyle: .actionSheet
                                     )
@@ -421,8 +442,8 @@ struct ContentView: View {
                                     ])
                                     
                                     // 添加取消和确认按钮
-                                    alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-                                    alert.addAction(UIAlertAction(title: "确定", style: .default) { _ in
+                                    alert.addAction(UIAlertAction(title: L(.cancel), style: .cancel))
+                                    alert.addAction(UIAlertAction(title: L(.confirm), style: .default) { _ in
                                         // 更新提醒时间并启用提醒
                                         breakfastTracker.setReminder(enabled: true, time: datePicker.date)
                                         
@@ -442,12 +463,12 @@ struct ContentView: View {
                                             .foregroundColor(accentColor)
                                         
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text("设置早餐提醒")
+                                            Text(L(.setBreakfastReminder))
                                                 .font(.system(size: 16, weight: .medium))
                                                 .foregroundColor(Color.primaryText)
                                             
                                             if breakfastTracker.isReminderEnabled {
-                                                Text("每天 \(formatTime(breakfastTracker.reminderTime))")
+                                                Text(L(.dailyReminder(formatTime(breakfastTracker.reminderTime))))
                                                     .font(.system(size: 13, weight: .regular))
                                                     .foregroundColor(Color.secondaryText)
                                             }
@@ -480,7 +501,7 @@ struct ContentView: View {
                             
                             // 如果不能选择今天的早餐状态，显示一个提示
                             if !breakfastTracker.canSelectBreakfastToday() {
-                                Text("今天已记录，明天再来")
+                                Text(L(.recordedToday))
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.secondary)
                                     .padding(.top, 30) // 增加顶部边距，确保与日历有足够间距
@@ -498,7 +519,7 @@ struct ContentView: View {
                                     HStack(spacing: 8) {
                                         Image(systemName: "arrow.counterclockwise")
                                             .font(.system(size: 14))
-                                        Text("清除今天的记录")
+                                        Text(L(.clearTodayRecord))
                                             .font(.system(size: 14, weight: .medium))
                                     }
                                     .foregroundColor(.secondary)
@@ -551,6 +572,9 @@ struct ContentView: View {
         .sheet(isPresented: $showReminderSettings) {
             ReminderSettingsView(breakfastTracker: breakfastTracker)
         }
+        .sheet(isPresented: $showLanguageSettings) {
+            LanguageSettingsView()
+        }
         .onAppear {
             // 检查今天是否已经记录了早餐状态
             let today = Date()
@@ -597,6 +621,11 @@ struct ContentView: View {
                 // 更新可选择状态
                 canSelectToday = breakfastTracker.canSelectBreakfastToday()
             }
+            
+            // 添加语言变更通知监听
+            NotificationCenter.default.addObserver(forName: .appLanguageDidChange, object: nil, queue: .main) { _ in
+                refreshView.toggle() // 切换状态触发视图刷新
+            }
         }
         .onDisappear {
             // 清理计时器
@@ -605,7 +634,11 @@ struct ContentView: View {
             
             // 移除角色变更通知监听
             NotificationCenter.default.removeObserver(self, name: .userRoleDidChange, object: nil)
+            
+            // 移除语言变更通知监听
+            NotificationCenter.default.removeObserver(self, name: .appLanguageDidChange, object: nil)
         }
+        .id(refreshView) // 使用id强制视图在refreshView变化时重新创建
     }
 }
 

@@ -8,6 +8,34 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import SwiftData
+
+// 导入本地化管理器
+// @_exported import EatBreakFirst
+
+// 简单的本地化函数
+func localizedString(_ key: String) -> String {
+    // 获取当前系统语言
+    let currentLanguage = Locale.current.languageCode
+    let isChinese = currentLanguage == "zh"
+    
+    // 简单的本地化字典
+    let localizedStrings: [String: [String: String]] = [
+        "widgetHasEatenBreakfast": ["zh": "已吃早餐", "en": "Breakfast Eaten"],
+        "widgetStreakDays": ["zh": "连续 %d 天", "en": "%d Day Streak"],
+        "widgetNoBreakfast": ["zh": "没吃早餐", "en": "No Breakfast"],
+        "widgetRememberTomorrow": ["zh": "明天要记得哟", "en": "Remember Tomorrow"],
+        "widgetBreakfastQuestion": ["zh": "今天吃早餐了没?", "en": "Did you eat breakfast today?"],
+        "widgetEaten": ["zh": "已吃", "en": "Yes"],
+        "widgetNotEaten": ["zh": "没吃", "en": "No"]
+    ]
+    
+    if let translations = localizedStrings[key] {
+        return isChinese ? translations["zh"]! : translations["en"]!
+    }
+    
+    return key
+}
 
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
@@ -263,35 +291,37 @@ struct EatBreakfirstWidgetEntryView : View {
                     if hasEaten {
                         // 显示连续吃早饭天数
                         VStack(spacing: 4) {
-                            Text("已吃早餐")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(successColor)
+                            Text(localizedString("widgetHasEatenBreakfast"))
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
                             
                             if entry.streak > 0 {
-                                Text("连续 \(entry.streak) 天")
+                                Text(String(format: localizedString("widgetStreakDays"), entry.streak))
                                     .font(.system(size: 14))
-                                    .foregroundColor(successColor.opacity(0.8))
+                                    .foregroundColor(.white.opacity(0.9))
                             }
                         }
                     } else {
                         // 显示提醒信息
                         VStack(spacing: 4) {
-                            Text("没吃早餐")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(warningColor)
+                            Text(localizedString("widgetNoBreakfast"))
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
                             
-                            Text("明天要记得哟")
+                            Text(localizedString("widgetRememberTomorrow"))
                                 .font(.system(size: 14))
-                                .foregroundColor(warningColor.opacity(0.8))
+                                .foregroundColor(.white.opacity(0.9))
                         }
                     }
                 }
             } else {
                 // 未记录状态 - 显示按钮
                 VStack(spacing: 16) {
-                    Text("今天吃早餐了没?")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.primary)
+                    Text(localizedString("widgetBreakfastQuestion"))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 10)
                     
                     HStack(spacing: 16) {
                         // 已吃早餐按钮
@@ -301,7 +331,7 @@ struct EatBreakfirstWidgetEntryView : View {
                                     .font(.system(size: 28))
                                     .foregroundColor(successColor)
                                 
-                                Text("已吃")
+                                Text(localizedString("widgetEaten"))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(successColor)
                             }
@@ -320,7 +350,7 @@ struct EatBreakfirstWidgetEntryView : View {
                                     .font(.system(size: 28))
                                     .foregroundColor(warningColor)
                                 
-                                Text("没吃")
+                                Text(localizedString("widgetNotEaten"))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(warningColor)
                             }

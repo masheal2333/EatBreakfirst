@@ -284,16 +284,80 @@ class BreakfastTracker: ObservableObject {
     
     // Setup achievements
     private func setupAchievements() {
+        let language = UserRoleManager.shared.getCurrentLanguage()
+        
+        // 根据当前语言设置成就名称和描述
+        let achievementNames: [String]
+        let achievementDescriptions: [String]
+        
+        if language == .english {
+            achievementNames = [
+                "First Step",
+                "One Week Streak",
+                "Persistence",
+                "Habit Formation",
+                "Life Master"
+            ]
+            
+            achievementDescriptions = [
+                "Record your first breakfast",
+                "Eat breakfast for 7 consecutive days",
+                "Eat breakfast for 14 consecutive days",
+                "Eat breakfast for 21 consecutive days",
+                "Eat breakfast for 30 consecutive days"
+            ]
+        } else {
+            achievementNames = [
+                "第一步",
+                "一周坚持",
+                "坚持不懈",
+                "习惯养成",
+                "生活大师"
+            ]
+            
+            achievementDescriptions = [
+                "记录你的第一个早餐",
+                "连续7天吃早餐",
+                "连续14天吃早餐",
+                "连续21天吃早餐",
+                "连续30天吃早餐"
+            ]
+        }
+        
+        // 保存当前成就的解锁状态
+        let unlockedStatus: [Bool]
+        let unlockDates: [Date?]
+        
+        if !achievements.isEmpty {
+            unlockedStatus = achievements.map { $0.isUnlocked }
+            unlockDates = achievements.map { $0.unlockDate }
+        } else {
+            unlockedStatus = Array(repeating: false, count: 5)
+            unlockDates = Array(repeating: nil, count: 5)
+        }
+        
         achievements = [
-            Achievement(name: "第一步", description: "记录你的第一个早餐", icon: "sunrise.fill", requirement: 1),
-            Achievement(name: "一周坚持", description: "连续7天吃早餐", icon: "calendar.badge.clock", requirement: 7),
-            Achievement(name: "坚持不懈", description: "连续14天吃早餐", icon: "calendar.badge.exclamationmark", requirement: 14),
-            Achievement(name: "习惯养成", description: "连续21天吃早餐", icon: "calendar.badge.checkmark", requirement: 21),
-            Achievement(name: "生活大师", description: "连续30天吃早餐", icon: "star.fill", requirement: 30)
+            Achievement(name: achievementNames[0], description: achievementDescriptions[0], icon: "sunrise.fill", requirement: 1),
+            Achievement(name: achievementNames[1], description: achievementDescriptions[1], icon: "calendar.badge.clock", requirement: 7),
+            Achievement(name: achievementNames[2], description: achievementDescriptions[2], icon: "calendar.badge.exclamationmark", requirement: 14),
+            Achievement(name: achievementNames[3], description: achievementDescriptions[3], icon: "calendar.badge.checkmark", requirement: 21),
+            Achievement(name: achievementNames[4], description: achievementDescriptions[4], icon: "star.fill", requirement: 30)
         ]
+        
+        // 恢复成就的解锁状态
+        for i in 0..<min(achievements.count, unlockedStatus.count) {
+            achievements[i].isUnlocked = unlockedStatus[i]
+            achievements[i].unlockDate = unlockDates[i]
+        }
         
         // 在应用启动时检查成就，但不显示弹窗
         checkAchievements(showPopup: false)
+    }
+    
+    // 公共方法：刷新成就（用于语言切换时）
+    func refreshAchievements() {
+        setupAchievements()
+        objectWillChange.send()
     }
     
     // Check and update achievements
