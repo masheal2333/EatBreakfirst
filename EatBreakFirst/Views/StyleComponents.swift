@@ -6,6 +6,130 @@
 //
 
 import SwiftUI
+import UIKit
+
+// 触觉反馈管理器 - 单例模式
+class HapticManager {
+    static let shared = HapticManager()
+    
+    private init() {}
+    
+    // 通知类型触觉反馈 - 用于成功、警告、错误等状态反馈
+    func notification(type: UINotificationFeedbackGenerator.FeedbackType) {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(type)
+    }
+    
+    // 冲击类型触觉反馈 - 用于按钮点击、滑动等交互
+    func impact(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
+    // 按钮点击触觉反馈 - 默认使用medium强度
+    func buttonTap() {
+        impact(style: .medium)
+    }
+    
+    // 轻触触觉反馈 - 用于轻触操作
+    func lightTap() {
+        impact(style: .light)
+    }
+    
+    // 重触触觉反馈 - 用于重要操作
+    func heavyTap() {
+        impact(style: .heavy)
+    }
+    
+    // 软触觉反馈 - 柔和的触觉体验
+    func softTap() {
+        if #available(iOS 13.0, *) {
+            impact(style: .soft)
+        } else {
+            impact(style: .light)
+        }
+    }
+    
+    // 硬触觉反馈 - 坚硬的触觉体验
+    func rigidTap() {
+        if #available(iOS 13.0, *) {
+            impact(style: .rigid)
+        } else {
+            impact(style: .heavy)
+        }
+    }
+    
+    // 成功操作触觉反馈
+    func success() {
+        notification(type: .success)
+    }
+    
+    // 错误操作触觉反馈
+    func error() {
+        notification(type: .error)
+    }
+    
+    // 警告操作触觉反馈
+    func warning() {
+        notification(type: .warning)
+    }
+}
+
+// 按钮触觉生成器结构体 - 负责处理普通按钮的触觉反馈
+struct ButtonHapticGenerator: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                TapGesture()
+                    .onEnded { _ in
+                        HapticManager.shared.buttonTap()
+                    }
+            )
+    }
+}
+
+// 成功触觉生成器结构体 - 负责处理成功按钮的触觉反馈
+struct SuccessHapticGenerator: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                TapGesture()
+                    .onEnded { _ in
+                        HapticManager.shared.success()
+                    }
+            )
+    }
+}
+
+// 错误触觉生成器结构体 - 负责处理错误按钮的触觉反馈
+struct ErrorHapticGenerator: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                TapGesture()
+                    .onEnded { _ in
+                        HapticManager.shared.error()
+                    }
+            )
+    }
+}
+
+// 为 View 扩展触觉反馈功能
+extension View {
+    func hapticFeedback() -> some View {
+        self.modifier(ButtonHapticGenerator())
+    }
+    
+    func successHaptic() -> some View {
+        self.modifier(SuccessHapticGenerator())
+    }
+    
+    func errorHaptic() -> some View {
+        self.modifier(ErrorHapticGenerator())
+    }
+}
 
 public struct ScaleButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
@@ -13,6 +137,15 @@ public struct ScaleButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : 1)
             .opacity(configuration.isPressed ? 0.9 : 1)
             .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
+    }
+}
+
+// 创建一个新的按钮样式，不带缩放效果
+public struct SimpleButtonStyle: ButtonStyle {
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 

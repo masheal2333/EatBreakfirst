@@ -74,6 +74,7 @@ public struct CalendarView: View {
                 .buttonStyle(PressableButtonStyle())
             }
             .padding(.horizontal)
+            .padding(.top, 8) // 增加顶部内边距
             
             // Weekday headers
             LazyVGrid(columns: columns, spacing: 8) {
@@ -125,7 +126,7 @@ public struct CalendarView: View {
                     pageWidth = geometry.size.width
                 }
             }
-            .frame(height: 260) // 调整高度以确保完整显示
+            .frame(height: 280) // 调整高度以确保完整显示
             .contentShape(Rectangle())
             .clipped() // Prevent views from showing outside the container
             .gesture(
@@ -193,12 +194,14 @@ public struct CalendarView: View {
             )
         }
         .padding()
+        .padding(.vertical, 8) // 增加垂直内边距
         .background(Color.primary.opacity(0.03))
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
         )
+        .frame(height: 320) // 增加整体高度，确保有足够空间显示日期和图标
     }
     
     private func previousMonth(animated: Bool = true) {
@@ -269,7 +272,7 @@ struct CalendarMonthView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            LazyVGrid(columns: columns, spacing: 6) {
+            LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(daysInMonth(), id: \.self) { date in
                     if let date = date {
                         // 检查日期是否属于当前月
@@ -286,7 +289,7 @@ struct CalendarMonthView: View {
                     }
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 8)
         }
     }
     
@@ -353,20 +356,22 @@ public struct DayCell: View {
     }
     
     public var body: some View {
-        ZStack {
-            // 移除选中日期的背景色
-            Circle()
-                .fill(Color.clear)
-                .frame(width: 32, height: 32)
-            
+        VStack(spacing: 2) {
+            // 日期数字
             Text(dayNumber)
                 .font(.footnote)
+                .frame(height: 16)
             
+            // 勾选图标
             if let hasEaten = breakfastTracker.hasEatenBreakfast(on: date), hasEaten {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Color.categoryConsistency)
-                    .offset(x: 0, y: 10)
+                    .frame(height: 16)
+            } else {
+                // 空白占位，保持布局一致
+                Color.clear
+                    .frame(height: 16)
             }
         }
         .frame(width: 36, height: 36)

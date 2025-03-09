@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UserNotifications
+import UIKit
 // 导入早餐背景视图组件
 
 struct ContentView: View {
@@ -72,7 +73,8 @@ struct ContentView: View {
                                         .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                                 )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(SimpleButtonStyle())
+                        .hapticFeedback()
                         #if DEBUG
                         // 在调试模式下，长按统计按钮可以切换角色
                         .onLongPressGesture {
@@ -81,8 +83,7 @@ struct ContentView: View {
                             
                             // 显示角色切换提示
                             let roleName = isAdmin ? "管理员" : "普通用户"
-                            let feedback = UINotificationFeedbackGenerator()
-                            feedback.notificationOccurred(.success)
+                            HapticManager.shared.success()
                             
                             // 使用临时弹窗提示角色已切换
                             let alert = UIAlertController(
@@ -116,7 +117,8 @@ struct ContentView: View {
                                         .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                                 )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(SimpleButtonStyle())
+                        .hapticFeedback()
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
@@ -158,6 +160,7 @@ struct ContentView: View {
                                         breakfastTracker.recordBreakfast(eaten: false)
                                         // 更新可选择状态
                                         canSelectToday = breakfastTracker.canSelectBreakfastToday()
+                                        // 不需要显式调用触觉反馈，由修饰符处理
                                     }
                                 }) {
                                     // 简洁圆形按钮与 X 标记
@@ -177,6 +180,7 @@ struct ContentView: View {
                                         .shadow(color: redColor.opacity(0.3), radius: 10, x: 0, y: 5)
                                 }
                                 .buttonStyle(ScaleButtonStyle())
+                                .errorHaptic()
                                 
                                 // 确认按钮 - 保持在右侧
                                 Button(action: {
@@ -186,6 +190,7 @@ struct ContentView: View {
                                         breakfastTracker.recordBreakfast(eaten: true)
                                         // 更新可选择状态
                                         canSelectToday = breakfastTracker.canSelectBreakfastToday()
+                                        // 不需要显式调用触觉反馈，由修饰符处理
                                     }
                                 }) {
                                     // 简洁圆形按钮与对勾标记
@@ -205,6 +210,7 @@ struct ContentView: View {
                                         .shadow(color: greenColor.opacity(0.3), radius: 10, x: 0, y: 5)
                                 }
                                 .buttonStyle(ScaleButtonStyle())
+                                .successHaptic()
                             }
                             .padding(.horizontal, 30)
                             .padding(.bottom, 40) // 增加底部空间，使按钮更容易触及
@@ -226,10 +232,11 @@ struct ContentView: View {
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.secondary)
                                     .padding(.horizontal)
+                                    .padding(.bottom, 30) // 增加底部边距，避免与日历重叠
                                 
                                 // 显示日历视图
                                 CalendarView(breakfastTracker: breakfastTracker)
-                                    .frame(height: 280)
+                                    .frame(height: 320)
                                     .padding(16)
                                     .padding(.top, 20)
                             }
@@ -248,86 +255,88 @@ struct ContentView: View {
                                 .zIndex(1) // 确保这个元素保持在顶层
 
                             // Streak counter with refined design - tappable to show calendar
-                            VStack(spacing: 5) {
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                        showCalendar.toggle()
-                                    }
-                                }) {
-                                    HStack {
-                                        Text("连续 \(breakfastTracker.streakCount) 天吃了早饭")
-                                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                                        
-                                        Image(systemName: showCalendar ? "chevron.up" : "chevron.down")
-                                            .font(.system(size: 16, weight: .medium))
-                                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                                            .animation(.easeInOut, value: showCalendar)
-                                    }
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .background(
-                                        Capsule()
-                                            .fill(.white.opacity(0.1))
-                                    )
-                                    .overlay(
-                                        Capsule()
-                                            .strokeBorder(.white.opacity(0.2), lineWidth: 1)
-                                    )
+                            Button(action: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                    showCalendar.toggle()
                                 }
-                                .buttonStyle(ScaleButtonStyle())
-                            }
-                            .padding(.bottom, 10)
-                            
-                            // Calendar view with refined card design - only shown when tapped
-                            ZStack {
-                                if showCalendar {
-                                    CalendarView(breakfastTracker: breakfastTracker)
-                                        .frame(height: 280)
-                                        .padding(16)
-                                        .transition(AnyTransition.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
-                                        .zIndex(0) // Ensure this stays below other elements
+                            }) {
+                                HStack {
+                                    Text("连续 \(breakfastTracker.streakCount) 天吃了早饭")
+                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Image(systemName: showCalendar ? "chevron.up" : "chevron.down")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                        .animation(.easeInOut, value: showCalendar)
                                 }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(
+                                    Capsule()
+                                        .fill(.white.opacity(0.1))
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                                )
                             }
-                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showCalendar)
-                            
-                            // 返回按钮已移除
-                            
-                            // 如果不能选择今天的早餐状态，显示一个提示
-                            if !breakfastTracker.canSelectBreakfastToday() {
-                                Text("今天已记录，明天再来")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.secondary)
-                                    .padding(.top, 10)
-                            }
-                            
-                            // 添加清除今天记录的按钮（仅管理员可见）
-                            if isAdmin {
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                        breakfastTracker.clearTodayRecord()
-                                        hasEatenBreakfast = nil
-                                        canSelectToday = true
-                                    }
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "arrow.counterclockwise")
-                                            .font(.system(size: 14))
-                                        Text("清除今天的记录")
-                                            .font(.system(size: 14, weight: .medium))
-                                    }
-                                    .foregroundColor(.secondary)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 16)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(Color.gray.opacity(0.1))
-                                    )
-                                }
-                                .padding(.top, 16)
+                            .buttonStyle(ScaleButtonStyle())
+                            .hapticFeedback()
+                        }
+                        .padding(.bottom, 10)
+                        
+                        // Calendar view with refined card design - only shown when tapped
+                        ZStack {
+                            if showCalendar {
+                                CalendarView(breakfastTracker: breakfastTracker)
+                                    .frame(height: 320)
+                                    .padding(16)
+                                    .padding(.top, 20)
+                                    .padding(.bottom, 20) // 增加底部边距，确保与下方文字不重叠
+                                    .transition(AnyTransition.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+                                    .zIndex(0) // Ensure this stays below other elements
                             }
                         }
-                        .padding(.horizontal, 24)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showCalendar)
+                        
+                        // 返回按钮已移除
+                        
+                        // 如果不能选择今天的早餐状态，显示一个提示
+                        if !breakfastTracker.canSelectBreakfastToday() {
+                            Text("今天已记录，明天再来")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.secondary)
+                                .padding(.top, 30) // 增加顶部边距，确保与日历有足够间距
+                        }
+                        
+                        // 添加清除今天记录的按钮（仅管理员可见）
+                        if isAdmin {
+                            Button(action: {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                    breakfastTracker.clearTodayRecord()
+                                    hasEatenBreakfast = nil
+                                    canSelectToday = true
+                                }
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 14))
+                                    Text("清除今天的记录")
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .foregroundColor(.secondary)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color.gray.opacity(0.1))
+                                )
+                            }
+                            .padding(.top, 30) // 增加顶部边距，确保与日历有足够间距
+                            .buttonStyle(SimpleButtonStyle())
+                            .hapticFeedback()
+                        }
                     } else {
                         // Reminder View - Refined with minimalist principles
                         VStack(spacing: 40) {
@@ -379,7 +388,53 @@ struct ContentView: View {
                             // Reminder card with subtle design
                             VStack(spacing: 16) {
                                 Button(action: {
-                                    showReminderSettings = true
+                                    // 直接显示时间选择器而不是设置页面
+                                    let alertController = UIAlertController(
+                                        title: "设置早餐提醒时间",
+                                        message: "请选择每天提醒的时间",
+                                        preferredStyle: .actionSheet
+                                    )
+                                    
+                                    // 创建日期选择器
+                                    let datePicker = UIDatePicker()
+                                    datePicker.datePickerMode = .time
+                                    datePicker.preferredDatePickerStyle = .wheels
+                                    datePicker.date = breakfastTracker.reminderTime
+                                    
+                                    // 创建自定义视图控制器来容纳日期选择器
+                                    let pickerViewController = UIViewController()
+                                    pickerViewController.view = datePicker
+                                    
+                                    // 创建警报控制器
+                                    let alert = UIAlertController(
+                                        title: "选择提醒时间",
+                                        message: "\n\n\n\n\n\n\n\n\n",
+                                        preferredStyle: .actionSheet
+                                    )
+                                    
+                                    // 添加日期选择器到警报控制器
+                                    alert.view.addSubview(datePicker)
+                                    datePicker.translatesAutoresizingMaskIntoConstraints = false
+                                    NSLayoutConstraint.activate([
+                                        datePicker.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
+                                        datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50)
+                                    ])
+                                    
+                                    // 添加取消和确认按钮
+                                    alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+                                    alert.addAction(UIAlertAction(title: "确定", style: .default) { _ in
+                                        // 更新提醒时间并启用提醒
+                                        breakfastTracker.setReminder(enabled: true, time: datePicker.date)
+                                        
+                                        // 触发触觉反馈
+                                        HapticManager.shared.success()
+                                    })
+                                    
+                                    // 显示警报控制器
+                                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                       let rootViewController = windowScene.windows.first?.rootViewController {
+                                        rootViewController.present(alert, animated: true)
+                                    }
                                 }) {
                                     HStack(spacing: 14) {
                                         Image(systemName: breakfastTracker.isReminderEnabled ? "bell.fill" : "bell")
@@ -415,9 +470,10 @@ struct ContentView: View {
                                             .stroke(accentColor.opacity(0.15), lineWidth: 1)
                                     )
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .buttonStyle(SimpleButtonStyle())
+                                .hapticFeedback()
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 24)
                             .padding(.top, 20)
                             
                             // 返回按钮已移除
@@ -427,7 +483,7 @@ struct ContentView: View {
                                 Text("今天已记录，明天再来")
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.secondary)
-                                    .padding(.top, 10)
+                                    .padding(.top, 30) // 增加顶部边距，确保与日历有足够间距
                             }
                             
                             // 添加清除今天记录的按钮（仅管理员可见）
@@ -453,7 +509,9 @@ struct ContentView: View {
                                             .fill(Color.gray.opacity(0.1))
                                     )
                                 }
-                                .padding(.top, 16)
+                                .padding(.top, 30) // 增加顶部边距，确保与日历有足够间距
+                                .buttonStyle(SimpleButtonStyle())
+                                .hapticFeedback()
                             }
                         }
                         .padding(.horizontal, 24)

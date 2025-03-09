@@ -419,10 +419,10 @@ class BreakfastTracker: ObservableObject {
         // 只有在启用提醒的情况下才安排新的提醒
         guard isReminderEnabled else { return }
         
-        let center = UNUserNotificationCenter.current()
+        let notificationCenter = UNUserNotificationCenter.current()
         
         // 检查通知权限
-        center.getNotificationSettings { settings in
+        notificationCenter.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized else {
                 print("通知权限未授予，无法设置提醒")
                 return
@@ -459,7 +459,7 @@ class BreakfastTracker: ObservableObject {
             )
             
             // 注册通知类别
-            center.setNotificationCategories([category])
+            notificationCenter.setNotificationCategories([category])
             
             // 从reminderTime中提取小时和分钟
             let calendar = Calendar.current
@@ -480,14 +480,14 @@ class BreakfastTracker: ObservableObject {
             )
             
             // 添加通知请求
-            center.add(request) { error in
+            notificationCenter.add(request) { error in
                 if let error = error {
                     print("添加通知请求时出错: \(error.localizedDescription)")
                 } else {
                     print("早餐提醒已设置为每天 \(hour):\(minute)")
                     
                     // 调试：打印所有待处理的通知请求
-                    center.getPendingNotificationRequests { requests in
+                    notificationCenter.getPendingNotificationRequests { requests in
                         print("当前待处理的通知请求数量: \(requests.count)")
                         for request in requests {
                             if let trigger = request.trigger as? UNCalendarNotificationTrigger {
@@ -516,7 +516,7 @@ class BreakfastTracker: ObservableObject {
                             trigger: testTrigger
                         )
                         
-                        center.add(testRequest) { error in
+                        notificationCenter.add(testRequest) { error in
                             if let error = error {
                                 print("添加测试通知请求时出错: \(error.localizedDescription)")
                             } else {
@@ -531,17 +531,17 @@ class BreakfastTracker: ObservableObject {
     
     // 取消提醒通知
     func cancelReminder() {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["breakfastReminder"])
+        let notificationCenter = UNUserNotificationCenter.current()
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["breakfastReminder"])
         print("早餐提醒已取消")
     }
     
     // 请求通知权限
     func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
-        let center = UNUserNotificationCenter.current()
+        let notificationCenter = UNUserNotificationCenter.current()
         
         // 检查当前通知权限状态
-        center.getNotificationSettings { settings in
+        notificationCenter.getNotificationSettings { settings in
             switch settings.authorizationStatus {
             case .authorized, .provisional, .ephemeral:
                 // 已经有权限，直接返回成功
@@ -550,7 +550,7 @@ class BreakfastTracker: ObservableObject {
                 }
             case .notDetermined:
                 // 用户尚未决定，请求权限
-                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                notificationCenter.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                     DispatchQueue.main.async {
                         if let error = error {
                             print("请求通知权限时出错: \(error.localizedDescription)")

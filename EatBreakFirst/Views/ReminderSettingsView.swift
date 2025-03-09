@@ -8,6 +8,7 @@
 import SwiftUI
 import UserNotifications
 
+
 struct ReminderSettingsView: View {
     @ObservedObject var breakfastTracker: BreakfastTracker
     @Environment(\.dismiss) private var dismiss
@@ -64,7 +65,7 @@ struct ReminderSettingsView: View {
     
     /// 发送测试通知
     private func sendTestNotification() {
-        let center = UNUserNotificationCenter.current()
+        let notificationCenter = UNUserNotificationCenter.current()
         
         // 检查通知权限
         checkNotificationAuthorizationForTest { isAuthorized in
@@ -89,7 +90,7 @@ struct ReminderSettingsView: View {
     
     /// 创建并发送测试通知
     private func createAndSendTestNotification() {
-        let center = UNUserNotificationCenter.current()
+        let notificationCenter = UNUserNotificationCenter.current()
         
         // 创建测试通知内容
         let content = createTestNotificationContent()
@@ -105,7 +106,7 @@ struct ReminderSettingsView: View {
         )
         
         // 添加通知请求
-        center.add(request) { error in
+        notificationCenter.add(request) { error in
             if let error = error {
                 self.handleTestNotificationError(error)
             } else {
@@ -350,7 +351,7 @@ private struct TimePickerView: View {
                         DatePicker("", selection: $reminderTime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(WheelDatePickerStyle())
                             .labelsHidden()
-                            .onChange(of: reminderTime) { newValue in
+                            .onChangeCompat(of: reminderTime) { newValue in
                                 // 当用户更改时间时更新提醒设置
                                 breakfastTracker.setReminder(enabled: isReminderEnabled, time: newValue)
                             }
@@ -401,7 +402,7 @@ private struct ReminderToggleView: View {
                 .labelsHidden()
                 .toggleStyle(SwitchToggleStyle(tint: accentColor))
                 .disabled(isRequestingPermission) // 在请求权限时禁用开关
-                .onChange(of: isReminderEnabled) { newValue in
+                .onChangeCompat(of: isReminderEnabled) { newValue in
                     handleToggleChange(newValue: newValue)
                 }
         }
