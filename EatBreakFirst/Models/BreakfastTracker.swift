@@ -559,35 +559,6 @@ class BreakfastTracker: ObservableObject {
                             }
                         }
                     }
-                    
-                    // 如果当前时间接近设置的提醒时间，立即发送一个测试通知
-                    let now = Date()
-                    let nowHour = calendar.component(.hour, from: now)
-                    let nowMinute = calendar.component(.minute, from: now)
-                    
-                    // 如果当前时间与设置的提醒时间相差不超过5分钟，发送测试通知
-                    if abs(nowHour - hour) * 60 + abs(nowMinute - minute) <= 5 {
-                        // 创建一个立即触发的测试通知
-                        let testContent = UNMutableNotificationContent()
-                        testContent.title = "提醒已设置"
-                        testContent.body = "您的早餐提醒已成功设置为每天 \(hour):\(minute)"
-                        testContent.sound = .default
-                        
-                        let testTrigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
-                        let testRequest = UNNotificationRequest(
-                            identifier: "breakfastReminderTest",
-                            content: testContent,
-                            trigger: testTrigger
-                        )
-                        
-                        notificationCenter.add(testRequest) { error in
-                            if let error = error {
-                                print("添加测试通知请求时出错: \(error.localizedDescription)")
-                            } else {
-                                print("测试通知已发送")
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -620,7 +591,15 @@ class BreakfastTracker: ObservableObject {
                             print("请求通知权限时出错: \(error.localizedDescription)")
                             completion(false)
                         } else {
-                            completion(granted)
+                            if granted {
+                                // 确保在主线程中注册远程通知
+                                DispatchQueue.main.async {
+                                    UIApplication.shared.registerForRemoteNotifications()
+                                    completion(true)
+                                }
+                            } else {
+                                completion(false)
+                            }
                         }
                     }
                 }

@@ -25,6 +25,21 @@ struct EatBreakFirstApp: App {
         // 设置通知代理
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         
+        // 请求通知权限
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if granted {
+                print("通知权限已授予")
+                // 在主线程中注册远程通知
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            } else if let error = error {
+                print("通知权限请求错误: \(error.localizedDescription)")
+            } else {
+                print("用户拒绝了通知权限")
+            }
+        }
+        
         // 初始化用户角色管理器
         _ = UserRoleManager.shared
     }

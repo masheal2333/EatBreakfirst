@@ -19,7 +19,6 @@ struct ReminderSettingsView: View {
     @State private var showNotificationAlert = false
     @State private var isRequestingPermission = false
     @State private var showPermissionExplanationAlert = false
-    @State private var showTestNotificationSent = false
     
     // 定义动画常量
     private let animationDuration: Double = 0.3
@@ -59,88 +58,6 @@ struct ReminderSettingsView: View {
         isReminderEnabled = false
         showTimePickerAnimation = false
         breakfastTracker.setReminder(enabled: false, time: reminderTime)
-    }
-    
-    // MARK: - 测试通知管理
-    
-    /// 发送测试通知
-    private func sendTestNotification() {
-        let notificationCenter = UNUserNotificationCenter.current()
-        
-        // 检查通知权限
-        checkNotificationAuthorizationForTest { isAuthorized in
-            guard isAuthorized else { return }
-            
-            // 创建并发送测试通知
-            self.createAndSendTestNotification()
-        }
-    }
-    
-    /// 检查测试通知的授权状态
-    private func checkNotificationAuthorizationForTest(completion: @escaping (Bool) -> Void) {
-        breakfastTracker.requestNotificationPermission { granted in
-            DispatchQueue.main.async {
-                if !granted {
-                    showNotificationAlert = true
-                }
-                completion(granted)
-            }
-        }
-    }
-    
-    /// 创建并发送测试通知
-    private func createAndSendTestNotification() {
-        let notificationCenter = UNUserNotificationCenter.current()
-        
-        // 创建测试通知内容
-        let content = createTestNotificationContent()
-        
-        // 创建立即触发的触发器（5秒后触发）
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
-        
-        // 创建请求
-        let request = UNNotificationRequest(
-            identifier: "breakfastReminderTest",
-            content: content,
-            trigger: trigger
-        )
-        
-        // 添加通知请求
-        notificationCenter.add(request) { error in
-            if let error = error {
-                self.handleTestNotificationError(error)
-            } else {
-                self.handleTestNotificationSuccess()
-            }
-        }
-    }
-    
-    /// 创建测试通知内容
-    private func createTestNotificationContent() -> UNMutableNotificationContent {
-        let content = UNMutableNotificationContent()
-        content.title = L(.testNotificationTitle)
-        content.body = String(format: L(.testNotificationBody), formatTime(self.reminderTime))
-        content.sound = .default
-        return content
-    }
-    
-    /// 处理测试通知错误
-    private func handleTestNotificationError(_ error: Error) {
-        print("添加测试通知请求时出错: \(error.localizedDescription)")
-    }
-    
-    /// 处理测试通知成功
-    private func handleTestNotificationSuccess() {
-        print("测试通知已发送，将在5秒后显示")
-        DispatchQueue.main.async {
-            // 显示成功提示
-            showTestNotificationSent = true
-            
-            // 3秒后自动隐藏提示
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                showTestNotificationSent = false
-            }
-        }
     }
     
     var body: some View {
@@ -183,15 +100,6 @@ struct ReminderSettingsView: View {
                         
                         // 提示信息
                         InformationCardView()
-                        
-                        // 添加一个提示卡片
-                        if isReminderEnabled {
-                            NotificationPreviewCardView(
-                                sendTestNotification: sendTestNotification,
-                                animationDuration: animationDuration,
-                                isReminderEnabled: isReminderEnabled
-                            )
-                        }
                         
                         Spacer(minLength: 50)
                     }
@@ -254,31 +162,6 @@ struct ReminderSettingsView: View {
             } message: {
                 Text(L(.notificationExplanationMessage))
             }
-            // 添加测试通知发送成功提示
-            .overlay(
-                ZStack {
-                    if showTestNotificationSent {
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                                Text(L(.testNotificationSent))
-                                    .font(.system(size: 15, weight: .medium))
-                            }
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(colorScheme == .dark ? Color(hex: "2A2A2A") : Color.white)
-                                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
-                            )
-                            .padding(.bottom, 30)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
-                        .animation(.spring(), value: showTestNotificationSent)
-                    }
-                }
-            )
         }
         .onAppear {
             // 如果提醒已启用，检查通知权限状态
@@ -498,77 +381,6 @@ private struct InformationCardView: View {
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         )
         .padding(.horizontal)
-    }
-}
-
-/// 通知预览卡片视图
-private struct NotificationPreviewCardView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let sendTestNotification: () -> Void
-    let animationDuration: Double
-    let isReminderEnabled: Bool
-    
-    private let accentColor = Color(hex: "5E72E4")
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "bell.badge.fill")
-                    .foregroundColor(.orange)
-                    .font(.system(size: 18))
-                
-                Text(L(.reminderPreview))
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.orange)
-            }
-            
-            // 通知预览
-            VStack(alignment: .leading, spacing: 8) {
-                Text(L(.reminderTitle))
-                    .font(.system(size: 16, weight: .bold))
-                
-                Text(L(.reminderBody))
-                    .font(.system(size: 14))
-                    .foregroundColor(Color.secondaryText)
-                    .lineSpacing(2)
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(colorScheme == .dark ? Color(hex: "333333") : Color(hex: "F5F5F5"))
-            )
-            
-            // 添加测试通知按钮
-            Button(action: {
-                sendTestNotification()
-            }) {
-                HStack {
-                    Image(systemName: "bell.and.waveform.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                    
-                    Text(L(.testNotification))
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(accentColor)
-                )
-            }
-            .padding(.top, 8)
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(colorScheme == .dark ? Color(hex: "2A2A2A") : Color.white)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-        )
-        .padding(.horizontal)
-        .transition(.opacity)
-        .animation(.easeInOut(duration: animationDuration), value: isReminderEnabled)
     }
 }
 

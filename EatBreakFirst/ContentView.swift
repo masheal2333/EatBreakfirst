@@ -366,27 +366,27 @@ struct ContentView: View {
                                 // Clock icon with subtle background
                                 ZStack {
                                     Circle()
-                                        .fill(accentColor.opacity(0.15))
+                                        .fill(Color(hex: "4A4A4A").opacity(0.15))
                                         .frame(width: 90, height: 90)
                                     
                                     Image(systemName: "clock.badge.exclamationmark.fill")
                                         .symbolRenderingMode(.hierarchical)
-                                        .foregroundStyle(accentColor)
+                                        .foregroundStyle(Color(hex: "8E8E93")) // 银灰色，接近真实时钟颜色
                                         .font(.system(size: 48, weight: .medium))
-                                        .shadow(color: accentColor.opacity(0.2), radius: 2, x: 0, y: 1)
+                                        .shadow(color: Color(hex: "8E8E93").opacity(0.2), radius: 2, x: 0, y: 1)
                                 }
                                 
                                 // Carrot icon with subtle background
                                 ZStack {
                                     Circle()
-                                        .fill(Color.warningColor.opacity(0.15))
+                                        .fill(Color(hex: "FF8A00").opacity(0.15))
                                         .frame(width: 90, height: 90)
                                     
                                     Image(systemName: "carrot.fill")
                                         .symbolRenderingMode(.hierarchical)
-                                        .foregroundStyle(Color.warningColor)
+                                        .foregroundStyle(Color(hex: "FF8A00")) // 橙色，接近真实胡萝卜颜色
                                         .font(.system(size: 48, weight: .medium))
-                                        .shadow(color: Color.warningColor.opacity(0.2), radius: 2, x: 0, y: 1)
+                                        .shadow(color: Color(hex: "FF8A00").opacity(0.2), radius: 2, x: 0, y: 1)
                                 }
                             }
                             .padding(.bottom, 10)
@@ -395,9 +395,9 @@ struct ContentView: View {
                             Text(L(.rememberTomorrow))
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
                                 .tracking(-0.5) // 更紧凑的字母间距
-                                .foregroundColor(accentColor)
+                                .foregroundColor(Color.primaryText)
                                 .multilineTextAlignment(.center)
-                                .shadow(color: accentColor.opacity(0.15), radius: 2, x: 0, y: 1)
+                                .shadow(color: Color.shadowColor, radius: 2, x: 0, y: 1)
                             
                             // Subtitle with subtle styling
                             Text(L(.healthyDayStart))
@@ -409,58 +409,48 @@ struct ContentView: View {
                             // Reminder card with subtle design
                             VStack(spacing: 16) {
                                 Button(action: {
-                                    // 直接显示时间选择器而不是设置页面
-                                    let alertController = UIAlertController(
-                                        title: L(.selectReminderTime),
-                                        message: "请选择每天提醒的时间",
-                                        preferredStyle: .actionSheet
+                                    // 使用更现代的底部弹出时间选择器
+                                    let hostingController = UIHostingController(rootView: 
+                                        ModernTimePicker(
+                                            isPresented: .constant(true),
+                                            currentTime: breakfastTracker.reminderTime,
+                                            onSave: { selectedTime in
+                                                breakfastTracker.setReminder(enabled: true, time: selectedTime)
+                                                HapticManager.shared.success()
+                                            },
+                                            onCancel: {}
+                                        )
+                                        .environment(\.colorScheme, colorScheme)
                                     )
                                     
-                                    // 创建日期选择器
-                                    let datePicker = UIDatePicker()
-                                    datePicker.datePickerMode = .time
-                                    datePicker.preferredDatePickerStyle = .wheels
-                                    datePicker.date = breakfastTracker.reminderTime
+                                    hostingController.modalPresentationStyle = .pageSheet
                                     
-                                    // 创建自定义视图控制器来容纳日期选择器
-                                    let pickerViewController = UIViewController()
-                                    pickerViewController.view = datePicker
+                                    // 设置视图控制器的视图边距
+                                    hostingController.view.backgroundColor = .clear
                                     
-                                    // 创建警报控制器
-                                    let alert = UIAlertController(
-                                        title: "选择提醒时间",
-                                        message: "\n\n\n\n\n\n\n\n\n",
-                                        preferredStyle: .actionSheet
-                                    )
+                                    if #available(iOS 15.0, *) {
+                                        if let sheet = hostingController.sheetPresentationController {
+                                            sheet.detents = [.medium()]
+                                            sheet.prefersGrabberVisible = false
+                                            // 设置边距
+                                            sheet.preferredCornerRadius = 20
+                                            // 允许边缘交互
+                                            sheet.prefersEdgeAttachedInCompactHeight = true
+                                            // 设置左右边距
+                                            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+                                        }
+                                    }
                                     
-                                    // 添加日期选择器到警报控制器
-                                    alert.view.addSubview(datePicker)
-                                    datePicker.translatesAutoresizingMaskIntoConstraints = false
-                                    NSLayoutConstraint.activate([
-                                        datePicker.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
-                                        datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50)
-                                    ])
-                                    
-                                    // 添加取消和确认按钮
-                                    alert.addAction(UIAlertAction(title: L(.cancel), style: .cancel))
-                                    alert.addAction(UIAlertAction(title: L(.confirm), style: .default) { _ in
-                                        // 更新提醒时间并启用提醒
-                                        breakfastTracker.setReminder(enabled: true, time: datePicker.date)
-                                        
-                                        // 触发触觉反馈
-                                        HapticManager.shared.success()
-                                    })
-                                    
-                                    // 显示警报控制器
+                                    // 显示底部弹出控制器
                                     if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                        let rootViewController = windowScene.windows.first?.rootViewController {
-                                        rootViewController.present(alert, animated: true)
+                                        rootViewController.present(hostingController, animated: true)
                                     }
                                 }) {
                                     HStack(spacing: 14) {
                                         Image(systemName: breakfastTracker.isReminderEnabled ? "bell.fill" : "bell")
                                             .font(.system(size: 20, weight: .medium))
-                                            .foregroundColor(accentColor)
+                                            .foregroundColor(Color(hex: "FFD700")) // 金色铃铛
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(L(.setBreakfastReminder))
@@ -478,18 +468,21 @@ struct ContentView: View {
                                         
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(accentColor.opacity(0.5))
+                                            .foregroundColor(Color.secondaryText.opacity(0.5))
                                     }
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 16)
                                     .background(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .fill(accentColor.opacity(0.08))
+                                            .fill(colorScheme == .dark ? 
+                                                  Color(hex: "2A2A2A").opacity(0.7) : 
+                                                  Color.white.opacity(0.7))
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .stroke(accentColor.opacity(0.15), lineWidth: 1)
+                                            .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                                     )
+                                    .shadow(color: Color.shadowColor.opacity(0.1), radius: 5, x: 0, y: 2)
                                 }
                                 .buttonStyle(SimpleButtonStyle())
                                 .hapticFeedback()
@@ -652,6 +645,88 @@ fileprivate func formatTime(_ date: Date) -> String {
 #Preview {
     ContentView()
         .environmentObject(BreakfastTracker())
+}
+
+// 在文件末尾添加 ModernTimePicker 视图
+struct ModernTimePicker: View {
+    @Binding var isPresented: Bool
+    let currentTime: Date
+    let onSave: (Date) -> Void
+    let onCancel: () -> Void
+    
+    @State private var selectedTime: Date
+    @Environment(\.colorScheme) private var colorScheme
+    
+    init(isPresented: Binding<Bool>, currentTime: Date, onSave: @escaping (Date) -> Void, onCancel: @escaping () -> Void) {
+        self._isPresented = isPresented
+        self.currentTime = currentTime
+        self.onSave = onSave
+        self.onCancel = onCancel
+        self._selectedTime = State(initialValue: currentTime)
+    }
+    
+    var body: some View {
+        VStack {
+            // 时间选择器
+            DatePicker("", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                .datePickerStyle(WheelDatePickerStyle())
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .padding(.bottom, 60) // 为底部按钮留出空间
+                .overlay(
+                    // 底部按钮区域
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 16) {
+                            // 取消按钮
+                            Button(action: {
+                                isPresented = false
+                                onCancel()
+                            }) {
+                                Text(L(.cancel))
+                                    .font(.system(size: 17, weight: .regular))
+                                    .foregroundColor(Color.primaryText)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(colorScheme == .dark ? 
+                                                  Color(hex: "2A2A2A") : 
+                                                  Color(hex: "F2F2F7"))
+                                    )
+                            }
+                            
+                            // 确认按钮
+                            Button(action: {
+                                isPresented = false
+                                onSave(selectedTime)
+                            }) {
+                                Text(L(.confirm))
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.accentColor)
+                                    )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+                    }
+                )
+        }
+        .padding(.horizontal, 16) // 添加左右边距
+        .padding(.bottom, 20) // 添加底部边距
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
+        )
+        .padding(.horizontal, 16) // 整个视图与屏幕边缘的水平间距
+        .padding(.bottom, 16) // 整个视图与屏幕底部的间距
+    }
 }
 
 
