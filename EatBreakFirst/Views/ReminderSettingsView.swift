@@ -182,7 +182,7 @@ struct ReminderSettingsView: View {
                                     .labelsHidden()
                                     .toggleStyle(SwitchToggleStyle(tint: accentColor))
                                     .disabled(isRequestingPermission) // 在请求权限时禁用开关
-                                    .onChange(of: isReminderEnabled) { oldValue, newValue in
+                                    .onChange(of: isReminderEnabled) { newValue in
                                         if newValue {
                                             // 当用户启用提醒时，请求通知权限
                                             isRequestingPermission = true // 开始请求权限
@@ -275,7 +275,7 @@ struct ReminderSettingsView: View {
                                             DatePicker("", selection: $reminderTime, displayedComponents: .hourAndMinute)
                                                 .datePickerStyle(WheelDatePickerStyle())
                                                 .labelsHidden()
-                                                .onChange(of: reminderTime) { oldValue, newValue in
+                                                .onChange(of: reminderTime) { newValue in
                                                     // 当用户更改时间时更新提醒设置
                                                     breakfastTracker.setReminder(enabled: isReminderEnabled, time: newValue)
                                                 }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 // 确保可以使用ColorExtensions.swift中定义的Color扩展
+// 导入早餐背景图片组件
 
 // Stats View
 public struct StatsView: View {
@@ -95,7 +96,12 @@ public struct StatsView: View {
     
     public var body: some View {
         ZStack {
+            // 背景渐变
             backgroundGradient
+            
+            // 添加早餐背景图片
+            BreakfastImagesBackground()
+                .opacity(0.7)
             
             VStack(spacing: 0) {
                 headerView
@@ -125,13 +131,14 @@ public struct StatsView: View {
         HStack {
             Text("早餐统计")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
             
             Spacer()
             
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 24))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
             }
         }
         .padding(.horizontal, 20)
@@ -157,7 +164,7 @@ public struct StatsView: View {
             HStack {
                 Text("早餐数据概览")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color.primaryText)
                 
                 Spacer()
             }
@@ -218,7 +225,7 @@ public struct StatsView: View {
         VStack(alignment: .leading, spacing: 10) {
             // 图标
             Image(systemName: icon)
-                .font(.system(size: 18))
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(color)
                 .frame(width: 36, height: 36)
                 .background(backgroundColor)
@@ -227,26 +234,27 @@ public struct StatsView: View {
             // 数值
             Text("\(value)")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(.primary)
+                .foregroundColor(Color.primaryText)
             
             // 标签
             Text(label)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(15)
-        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F5F5F5"))
+        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F8F8F8").opacity(0.9))
         .cornerRadius(12)
+        .shadow(color: Color.shadowColor.opacity(0.05), radius: 2, x: 0, y: 1)
     }
     
     // 卡片背景
     private var cardBackground: some View {
         ZStack {
-            let cardColor = colorScheme == .dark ? Color(hex: "2A2A2A") : .white
+            let cardColor = colorScheme == .dark ? Color(hex: "2A2A2A").opacity(0.9) : Color.white.opacity(0.95)
             RoundedRectangle(cornerRadius: 20)
                 .fill(cardColor)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                .shadow(color: Color.shadowColor.opacity(0.08), radius: 8, x: 0, y: 4)
         }
     }
                         
@@ -256,7 +264,7 @@ public struct StatsView: View {
             HStack {
                 Text("早餐完成率")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .foregroundColor(colorScheme == .dark ? Color.primaryText : .black)
                 
                 Spacer()
                 
@@ -265,7 +273,8 @@ public struct StatsView: View {
                 
                 Text("\(completionRateInt)%")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(completionRateColor)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .shadow(color: completionRateColor.opacity(0.2), radius: 1, x: 0, y: 0)
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -302,6 +311,7 @@ public struct StatsView: View {
                         .frame(height: 12)
                         .scaleEffect(x: animateChart ? recentProgressWidth : 0.01, y: 1, anchor: .leading)
                         .animation(.easeOut(duration: 1.0), value: animateChart)
+                        .shadow(color: getCompletionRateColor(rate: stats.recentCompletionRate).opacity(0.3), radius: 1, x: 0, y: 0)
                 }
                 
                 // 全部记录进度条
@@ -333,6 +343,7 @@ public struct StatsView: View {
                         .frame(height: 12)
                         .scaleEffect(x: animateChart ? allTimeProgressWidth : 0.01, y: 1, anchor: .leading)
                         .animation(.easeOut(duration: 1.0).delay(0.3), value: animateChart)
+                        .shadow(color: getCompletionRateColor(rate: stats.allTimeCompletionRate).opacity(0.3), radius: 1, x: 0, y: 0)
                 }
                 
                 // 评价标签
@@ -376,7 +387,7 @@ public struct StatsView: View {
             HStack {
                 Text("早餐习惯洞察")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color.primaryText)
                 
                 Spacer()
                 
@@ -386,8 +397,8 @@ public struct StatsView: View {
                     }
                 }) {
                     Image(systemName: showDetails ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.white)
                 }
             }
             .padding(.horizontal, 20)
@@ -411,13 +422,14 @@ public struct StatsView: View {
                                 
                                 Text(stats.bestWeekday ?? "--")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(Color.primaryText)
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
-                        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F5F5F5"))
+                        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F8F8F8").opacity(0.9))
                         .cornerRadius(12)
+                        .shadow(color: Color.shadowColor.opacity(0.05), radius: 2, x: 0, y: 1)
                         
                         // 最差日卡片
                         VStack(spacing: 8) {
@@ -432,13 +444,14 @@ public struct StatsView: View {
                                 
                                 Text(stats.worstWeekday ?? "--")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(Color.primaryText)
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 15)
-                        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F5F5F5"))
+                        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F8F8F8").opacity(0.9))
                         .cornerRadius(12)
+                        .shadow(color: Color.shadowColor.opacity(0.05), radius: 2, x: 0, y: 1)
                     }
                     .padding(.horizontal, 20)
                     
@@ -451,7 +464,7 @@ public struct StatsView: View {
                         HStack(alignment: .lastTextBaseline, spacing: 4) {
                             Text(String(format: "%.1f", stats.weeklyAverage))
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
+                                .foregroundColor(Color.primaryText)
                             
                             Text("天")
                                 .font(.system(size: 16, weight: .medium))

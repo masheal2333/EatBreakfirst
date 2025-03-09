@@ -123,11 +123,11 @@ struct EatBreakfirstWidgetEntryView : View {
     var entry: Provider.Entry
     
     // 颜色常量 - 匹配应用的颜色方案
-    let primaryColor = Color(hex: "3F88C5")      // 主要蓝色 - 匹配 categoryStreak
+    let primaryColor = Color(red: 0.247, green: 0.533, blue: 0.773)      // 主要蓝色 - 匹配 categoryStreak (3F88C5)
     let secondaryColor = Color.secondary
-    let successColor = Color(hex: "5CAB7D")      // 成功绿色 - 匹配 categoryConsistency
-    let warningColor = Color(hex: "F2A65A")      // 警告橙色 - 匹配 categoryMilestone
-    let specialColor = Color(hex: "A16AE8")      // 特殊紫色 - 匹配 categorySpecial
+    let successColor = Color(red: 0.361, green: 0.671, blue: 0.49)      // 成功绿色 - 匹配 categoryConsistency (5CAB7D)
+    let warningColor = Color(red: 0.949, green: 0.651, blue: 0.353)      // 警告橙色 - 匹配 categoryMilestone (F2A65A)
+    let specialColor = Color(red: 0.631, green: 0.416, blue: 0.91)      // 特殊紫色 - 匹配 categorySpecial (A16AE8)
     let backgroundColor = Color(UIColor.secondarySystemBackground)
     
     var body: some View {
@@ -259,39 +259,14 @@ extension ConfigurationAppIntent {
     }
 }
 
-// 颜色扩展
+// Widget专用颜色定义
 extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
-        }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
-    
     // 添加应用颜色常量
     static let secondaryText = Color.secondary
-    static let categoryStreak = Color(hex: "3F88C5")      // 优化的蓝色
-    static let categoryConsistency = Color(hex: "5CAB7D") // 优化的绿色
-    static let categoryMilestone = Color(hex: "F2A65A")   // 优化的橙色
-    static let categorySpecial = Color(hex: "A16AE8")     // 优化的紫色
+    static let categoryStreak = Color(red: 0.247, green: 0.533, blue: 0.773)      // 优化的蓝色 (3F88C5)
+    static let categoryConsistency = Color(red: 0.361, green: 0.671, blue: 0.49) // 优化的绿色 (5CAB7D)
+    static let categoryMilestone = Color(red: 0.949, green: 0.651, blue: 0.353)   // 优化的橙色 (F2A65A)
+    static let categorySpecial = Color(red: 0.631, green: 0.416, blue: 0.91)     // 优化的紫色 (A16AE8)
 }
 
 #Preview(as: .systemSmall) {

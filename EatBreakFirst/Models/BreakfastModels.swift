@@ -74,13 +74,13 @@ struct Achievement: Identifiable, Equatable {
     var color: Color {
         switch category {
         case .streak:
-            return Color(hex: "2196F3") // 蓝色
+            return Color.categoryStreak // 使用ColorExtensions中定义的颜色
         case .consistency:
-            return Color(hex: "4CAF50") // 绿色
+            return Color.categoryConsistency
         case .milestone:
-            return Color(hex: "FF9800") // 橙色
+            return Color.categoryMilestone
         case .special:
-            return Color(hex: "9C27B0") // 紫色
+            return Color.categorySpecial
         }
     }
     

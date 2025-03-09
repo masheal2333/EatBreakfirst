@@ -1,55 +1,55 @@
 {
   "images" : [
     {
-      "filename" : "salad 1024.png",
+      "filename" : "早饭图标.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
     },
     {
-      "filename" : "salad 40.png",
+      "filename" : "早饭图标 40.png",
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "20x20"
     },
     {
-      "filename" : "salad 60.png",
+      "filename" : "早饭图标 60.png",
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "20x20"
     },
     {
-      "filename" : "salad 58.png",
+      "filename" : "早饭图标 58.png",
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "29x29"
     },
     {
-      "filename" : "salad 87.png",
+      "filename" : "早饭图标 87.png",
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "29x29"
     },
     {
-      "filename" : "salad 80.png",
+      "filename" : "早饭图标 80.png",
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "40x40"
     },
     {
-      "filename" : "salad 120.png",
+      "filename" : "早饭图标 120.png",
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "40x40"
     },
     {
-      "filename" : "salad 121.png",
+      "filename" : "早饭图标 121.png",
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "60x60"
     },
     {
-      "filename" : "salad 180.png",
+      "filename" : "早饭图标 180.png",
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "60x60"
@@ -100,7 +100,7 @@
       "size" : "83.5x83.5"
     },
     {
-      "filename" : "salad 1025.png",
+      "filename" : "早饭图标 1.png",
       "idiom" : "ios-marketing",
       "scale" : "1x",
       "size" : "1024x1024"

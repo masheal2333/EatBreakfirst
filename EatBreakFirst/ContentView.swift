@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UserNotifications
+// 导入早餐背景视图组件
 
 struct ContentView: View {
     @EnvironmentObject var breakfastTracker: BreakfastTracker
@@ -15,6 +16,7 @@ struct ContentView: View {
     @State private var showStats = false
     @State private var showAchievements = false
     @State private var showReminderSettings = false
+    @State private var showCalendar = false // 控制日历视图显示
     @State private var sunOffset: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
     
@@ -23,10 +25,10 @@ struct ContentView: View {
     // 添加一个状态来跟踪今天是否可以选择早餐状态
     @State private var canSelectToday: Bool = true
     
-    // Colors inspired by successful health and lifestyle apps - modern, calming, motivational
-    private let accentColor = Color(hex: "5E72E4") // Modern indigo accent - inspired by Calm and Headspace
-    private let greenColor = Color(hex: "2DCE89") // Vibrant mint green - inspired by fitness apps like Nike Run Club
-    private let redColor = Color(hex: "F5365C") // Energetic coral red - inspired by Apple Health
+    // 使用新的颜色系统 - 灵感来自斯德哥尔摩设计学院的色彩理论
+    private let accentColor = Color.accentColor     // 主题蓝色 - 沉稳而专业
+    private let greenColor = Color.successColor     // 成功绿色 - 清新而有活力
+    private let redColor = Color.errorColor         // 错误红色 - 醒目而不刺眼
     
     init() {
         // 检查今天是否已经记录了早餐状态
@@ -39,9 +41,16 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Clean, minimal background
-                BackgroundView()
-                    .ignoresSafeArea()
+                // 美味的早餐背景
+                ZStack {
+                    // 基础背景渐变
+                    BackgroundView()
+                    
+                    // 早餐食物图案背景
+                    // 暂时注释掉新组件，等我们解决导入问题
+                    // BreakfastImagesBackground()
+                }
+                .ignoresSafeArea()
                 
                 // Main content container - following Dieter Rams' principle of "Less, but better"
                 VStack {
@@ -51,8 +60,8 @@ struct ContentView: View {
                         Button(action: { showStats.toggle() }) {
                             Image(systemName: "chart.bar.fill")
                                 .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(.primary)
-                                .font(.system(size: 24, weight: .regular))
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
+                                .font(.system(size: 22, weight: .medium))
                                 .frame(width: 44, height: 44)
                                 .contentShape(Circle())
                                 .background(
@@ -69,8 +78,8 @@ struct ContentView: View {
                         Button(action: { showAchievements.toggle() }) {
                             Image(systemName: "trophy.fill")
                                 .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(.primary)
-                                .font(.system(size: 24, weight: .regular))
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
+                                .font(.system(size: 22, weight: .medium))
                                 .frame(width: 44, height: 44)
                                 .contentShape(Circle())
                                 .background(
@@ -94,9 +103,9 @@ struct ContentView: View {
                                 // Question text with refined typography
                                 Text("今天吃了早餐吗？")
                                     .font(.system(size: 36, weight: .bold, design: .rounded))
-                                    .tracking(-0.5) // Tighter letter spacing for elegance
-                                    .foregroundColor(.primary)
-                                    .shadow(color: .black.opacity(0.03), radius: 1, x: 0, y: 1)
+                                    .tracking(-0.5) // 更紧凑的字母间距，增加优雅感
+                                    .foregroundColor(colorScheme == .dark ? Color.primaryText : .black)
+                                    .shadow(color: .black.opacity(0.04), radius: 1, x: 0, y: 1)
                                 
                                 // 简化后的早餐图标 - 极简设计
                                 VStack(spacing: 30) {
@@ -201,76 +210,67 @@ struct ContentView: View {
                     } else if hasEatenBreakfast == true {
                         // Success View - Refined with Dieter Rams' principles
                         VStack(spacing: 36) {
-                            // Streak counter with refined design
+                            // Congratulations text with refined typography
+                            Text("牛哇牛哇！")
+                                .font(.system(size: 40, weight: .bold, design: .rounded))
+                                .tracking(-0.5)
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                                .shadow(color: accentColor.opacity(0.2), radius: 2, x: 0, y: 1)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .zIndex(1) // 确保这个元素保持在顶层
+
+                            // Streak counter with refined design - tappable to show calendar
                             VStack(spacing: 5) {
-                                Text("连续 \(breakfastTracker.streakCount) 天吃了早饭")
-                                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.primary)
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                        showCalendar.toggle()
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("连续 \(breakfastTracker.streakCount) 天吃了早饭")
+                                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                                        
+                                        Image(systemName: showCalendar ? "chevron.up" : "chevron.down")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                                            .animation(.easeInOut, value: showCalendar)
+                                    }
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 12)
                                     .background(
                                         Capsule()
-                                            .fill(accentColor.opacity(0.1))
+                                            .fill(.white.opacity(0.1))
                                     )
                                     .overlay(
                                         Capsule()
-                                            .strokeBorder(accentColor.opacity(0.2), lineWidth: 1)
+                                            .strokeBorder(.white.opacity(0.2), lineWidth: 1)
                                     )
+                                }
+                                .buttonStyle(ScaleButtonStyle())
                             }
                             .padding(.bottom, 10)
                             
-                            // 移除图标，保持页面简洁
-                            
-                            // Congratulations text with refined typography
-                            Text("恭喜你！")
-                                .font(.system(size: 40, weight: .bold, design: .rounded))
-                                .tracking(-0.5)
-                                .foregroundColor(.primary)
-                                .shadow(color: .black.opacity(0.03), radius: 1, x: 0, y: 1)
-                            
-                            Text("保持健康的早餐习惯")
-                                .font(.system(size: 18, weight: .medium, design: .rounded))
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, -10)
-                            
-                            // Calendar view with refined card design
-                            CalendarView(breakfastTracker: breakfastTracker)
-                                .frame(height: 280)
-                                .padding(16)
-                            
-                            // 只有在可以选择早餐状态时才显示返回按钮
-                            if breakfastTracker.canSelectBreakfastToday() {
-                                // Back button with refined design
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                        hasEatenBreakfast = nil
-                                        showConfetti = false
-                                    }
-                                }) {
-                                    Text("返回")
-                                        .font(.system(size: 17, weight: .medium))
-                                        .frame(width: 140)
-                                        .padding(.vertical, 14)
-                                        .background(
-                                            Capsule()
-                                                .fill(Color.primary.opacity(0.05))
-                                        )
-                                        .foregroundColor(.primary)
-                                        .overlay(
-                                            Capsule()
-                                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                                        )
-                                        .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
+                            // Calendar view with refined card design - only shown when tapped
+                            ZStack {
+                                if showCalendar {
+                                    CalendarView(breakfastTracker: breakfastTracker)
+                                        .frame(height: 280)
+                                        .padding(16)
+                                        .transition(AnyTransition.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+                                        .zIndex(0) // Ensure this stays below other elements
                                 }
-                                .buttonStyle(ScaleButtonStyle())
-                                .padding(.top, 20)
-                            } else {
-                                // 显示一个提示，告诉用户明天可以再次选择
-                                Text("今天已记录，明天再来")
+                            }
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showCalendar)
+                            
+                            // 返回按钮已移除
+                            
+                            // 如果不能选择今天的早餐状态，显示一个提示
+                            if !breakfastTracker.canSelectBreakfastToday() {
+                                Text("今天已记录，明天再吃一顿早饭!")
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.secondary)
-                                    .padding(.top, 20)
+                                    .padding(.top, 10)
                             }
                         }
                         .padding(.horizontal, 24)
@@ -282,26 +282,27 @@ struct ContentView: View {
                                 // Clock icon with subtle background
                                 ZStack {
                                     Circle()
-                                        .fill(Color.blue.opacity(0.1))
+                                        .fill(accentColor.opacity(0.15))
                                         .frame(width: 90, height: 90)
                                     
                                     Image(systemName: "clock.badge.exclamationmark.fill")
-                                        .symbolRenderingMode(.multicolor)
-                                        .font(.system(size: 50, weight: .medium))
-                                        .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                                        .symbolRenderingMode(.hierarchical)
+                                        .foregroundStyle(accentColor)
+                                        .font(.system(size: 48, weight: .medium))
+                                        .shadow(color: accentColor.opacity(0.2), radius: 2, x: 0, y: 1)
                                 }
                                 
                                 // Carrot icon with subtle background
                                 ZStack {
                                     Circle()
-                                        .fill(Color.orange.opacity(0.1))
+                                        .fill(Color.warningColor.opacity(0.15))
                                         .frame(width: 90, height: 90)
                                     
                                     Image(systemName: "carrot.fill")
                                         .symbolRenderingMode(.hierarchical)
-                                        .foregroundStyle(.orange)
-                                        .font(.system(size: 50, weight: .medium))
-                                        .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                                        .foregroundStyle(Color.warningColor)
+                                        .font(.system(size: 48, weight: .medium))
+                                        .shadow(color: Color.warningColor.opacity(0.2), radius: 2, x: 0, y: 1)
                                 }
                             }
                             .padding(.bottom, 10)
@@ -309,15 +310,15 @@ struct ContentView: View {
                             // Reminder text with refined typography
                             Text("明天要记得吃早饭")
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
-                                .tracking(-0.5) // Tighter letter spacing
-                                .foregroundColor(.primary)
+                                .tracking(-0.5) // 更紧凑的字母间距
+                                .foregroundColor(accentColor)
                                 .multilineTextAlignment(.center)
-                                .shadow(color: .black.opacity(0.03), radius: 1, x: 0, y: 1)
+                                .shadow(color: accentColor.opacity(0.15), radius: 2, x: 0, y: 1)
                             
                             // Subtitle with subtle styling
                             Text("健康的一天从早餐开始")
                                 .font(.system(size: 18, weight: .medium, design: .rounded))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color.secondaryText)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, -10)
                             
@@ -328,18 +329,18 @@ struct ContentView: View {
                                 }) {
                                     HStack(spacing: 14) {
                                         Image(systemName: breakfastTracker.isReminderEnabled ? "bell.fill" : "bell")
-                                            .font(.system(size: 20))
+                                            .font(.system(size: 20, weight: .medium))
                                             .foregroundColor(accentColor)
                                         
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("设置早餐提醒")
                                                 .font(.system(size: 16, weight: .medium))
-                                                .foregroundColor(.primary)
+                                                .foregroundColor(Color.primaryText)
                                             
                                             if breakfastTracker.isReminderEnabled {
                                                 Text("每天 \(formatTime(breakfastTracker.reminderTime))")
-                                                    .font(.system(size: 13))
-                                                    .foregroundColor(.secondary)
+                                                    .font(.system(size: 13, weight: .regular))
+                                                    .foregroundColor(Color.secondaryText)
                                             }
                                         }
                                         
@@ -347,17 +348,17 @@ struct ContentView: View {
                                         
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.secondary.opacity(0.6))
+                                            .foregroundColor(accentColor.opacity(0.5))
                                     }
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 16)
                                     .background(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .fill(Color.primary.opacity(0.03))
+                                            .fill(accentColor.opacity(0.08))
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                                            .stroke(accentColor.opacity(0.15), lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -365,37 +366,37 @@ struct ContentView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             
-                            // 只有在可以选择早餐状态时才显示返回按钮
-                            if breakfastTracker.canSelectBreakfastToday() {
-                                // Back button with refined design
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                        hasEatenBreakfast = nil
-                                    }
-                                }) {
-                                    Text("返回")
-                                        .font(.system(size: 17, weight: .medium))
-                                        .frame(width: 140)
-                                        .padding(.vertical, 14)
-                                        .background(
-                                            Capsule()
-                                                .fill(Color.primary.opacity(0.05))
-                                        )
-                                        .foregroundColor(.primary)
-                                        .overlay(
-                                            Capsule()
-                                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                                        )
-                                        .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
+                            // 始终显示返回按钮
+                            // Back button with refined design
+                            Button(action: {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                    hasEatenBreakfast = nil
                                 }
-                                .buttonStyle(ScaleButtonStyle())
-                                .padding(.top, 30)
-                            } else {
-                                // 显示一个提示，告诉用户明天可以再次选择
+                            }) {
+                                Text("返回")
+                                    .font(.system(size: 17, weight: .medium))
+                                    .frame(width: 140)
+                                    .padding(.vertical, 14)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.primary.opacity(0.05))
+                                    )
+                                    .foregroundColor(.primary)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                    )
+                                    .shadow(color: .black.opacity(0.03), radius: 5, x: 0, y: 2)
+                            }
+                            .buttonStyle(ScaleButtonStyle())
+                            .padding(.top, 30)
+                            
+                            // 如果不能选择今天的早餐状态，显示一个提示
+                            if !breakfastTracker.canSelectBreakfastToday() {
                                 Text("今天已记录，明天再来")
                                     .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.secondary)
-                                    .padding(.top, 30)
+                                    .padding(.top, 10)
                             }
                         }
                         .padding(.horizontal, 24)
