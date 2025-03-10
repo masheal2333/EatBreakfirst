@@ -14,16 +14,9 @@ public struct StatsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var animateChart = false
-    @State private var showDetails = false
-    @State private var refreshView = false // 添加刷新视图的状态
     
     private var weekdayNames: [String] {
-        let language = UserRoleManager.shared.getCurrentLanguage()
-        if language == .english {
-            return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        } else {
-            return ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-        }
+        return ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     }
     
     // 获取每周真实数据
@@ -117,11 +110,6 @@ public struct StatsView: View {
             animationEffect
         }
         .onAppear {
-            // 添加语言变更通知监听
-            NotificationCenter.default.addObserver(forName: .appLanguageDidChange, object: nil, queue: .main) { _ in
-                refreshView.toggle() // 切换状态触发视图刷新
-            }
-            
             // 延迟启动动画
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeInOut(duration: 1.0)) {
@@ -129,11 +117,6 @@ public struct StatsView: View {
                 }
             }
         }
-        .onDisappear {
-            // 移除通知监听
-            NotificationCenter.default.removeObserver(self, name: .appLanguageDidChange, object: nil)
-        }
-        .id(refreshView) // 使用id强制视图在refreshView变化时重新创建
     }
     
     // 背景渐变
@@ -152,7 +135,7 @@ public struct StatsView: View {
     // 头部视图
     private var headerView: some View {
         HStack {
-            Text(L(.statistics))
+            Text("统计")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(colorScheme == .dark ? .white : .black)
             
@@ -175,7 +158,6 @@ public struct StatsView: View {
             VStack(spacing: 25) {
                 summaryCardView
                 completionRateCardView
-                weeklyTrendCardView
             }
             .padding(.vertical, 15)
         }
@@ -185,7 +167,7 @@ public struct StatsView: View {
     private var summaryCardView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(L(.breakfastDataOverview))
+                Text("早餐数据概览")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(Color.primaryText)
                 
@@ -203,7 +185,7 @@ public struct StatsView: View {
                 // 早餐天数
                 statCardView(
                     value: stats.daysEaten,
-                    label: L(.breakfastDays),
+                    label: "早餐天数",
                     icon: "takeoutbag.and.cup.and.straw.fill",
                     color: Color.categoryConsistency,
                     backgroundColor: Color.categoryConsistency.opacity(0.1)
@@ -212,7 +194,7 @@ public struct StatsView: View {
                 // 未吃早餐
                 statCardView(
                     value: stats.daysSkipped,
-                    label: L(.skippedBreakfast),
+                    label: "未吃早餐",
                     icon: "xmark.circle.fill",
                     color: Color(hex: "F44336"),
                     backgroundColor: Color(hex: "F44336").opacity(0.1)
@@ -221,7 +203,7 @@ public struct StatsView: View {
                 // 当前连续
                 statCardView(
                     value: stats.currentStreak,
-                    label: L(.currentStreak),
+                    label: "当前连续",
                     icon: "flame.fill",
                     color: Color.categoryStreak,
                     backgroundColor: Color.categoryStreak.opacity(0.1)
@@ -230,7 +212,7 @@ public struct StatsView: View {
                 // 最长纪录
                 statCardView(
                     value: stats.longestStreak,
-                    label: L(.longestRecord),
+                    label: "最长纪录",
                     icon: "trophy.fill",
                     color: Color.categoryMilestone,
                     backgroundColor: Color.categoryMilestone.opacity(0.1)
@@ -285,7 +267,7 @@ public struct StatsView: View {
     private var completionRateCardView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(L(.completionRate))
+                Text("早餐完成率")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(Color.primaryText)
                 
@@ -307,13 +289,13 @@ public struct StatsView: View {
             VStack(spacing: 15) {
                 // 近30天进度条
                 HStack {
-                    Text(L(.recentRecord))
+                    Text("近期记录")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                     
                     Spacer()
                     
-                    Text("\(stats.recentDaysEaten)/\(stats.recentDaysTracked) \(L(.daysUnit))")
+                    Text("\(stats.recentDaysEaten)/\(stats.recentDaysTracked) 天")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                 }
@@ -339,13 +321,13 @@ public struct StatsView: View {
                 
                 // 全部记录进度条
                 HStack {
-                    Text(L(.allRecord))
+                    Text("全部记录")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                     
                     Spacer()
                     
-                    Text("\(stats.daysEaten)/\(stats.totalDaysTracked) \(L(.daysUnit))")
+                    Text("\(stats.daysEaten)/\(stats.totalDaysTracked) 天")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(Color.secondaryText)
                 }
@@ -396,125 +378,6 @@ public struct StatsView: View {
             .padding(.top, 4)
     }
                         
-    // 早餐习惯洞察卡片视图
-    private var weeklyTrendCardView: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(L(.weeklyTrend))
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(Color.primaryText)
-                
-                Spacer()
-                
-                Button(action: {
-                    withAnimation {
-                        showDetails.toggle()
-                    }
-                }) {
-                    Text(showDetails ? L(.hideDetails) : L(.showDetails))
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color.accentColor)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 15)
-            
-            if showDetails {
-                VStack(spacing: 20) {
-                    // 最佳和最差日统计
-                    HStack(spacing: 15) {
-                        // 最佳日卡片
-                        VStack(spacing: 8) {
-                            Text(L(.bestPerformance))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.secondaryText)
-                            
-                            HStack(spacing: 8) {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(Color.categoryMilestone)
-                                    .font(.system(size: 16))
-                                
-                                Text(stats.bestWeekday ?? "--")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Color.primaryText)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F8F8F8").opacity(0.9))
-                        .cornerRadius(12)
-                        .shadow(color: Color.shadowColor.opacity(0.05), radius: 2, x: 0, y: 1)
-                        
-                        // 最差日卡片
-                        VStack(spacing: 8) {
-                            Text(L(.needImprovement))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.secondaryText)
-                            
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(Color(hex: "F44336"))
-                                    .font(.system(size: 16))
-                                
-                                Text(stats.worstWeekday ?? "--")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Color.primaryText)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(Color(hex: colorScheme == .dark ? "2A2A2A" : "F8F8F8").opacity(0.9))
-                        .cornerRadius(12)
-                        .shadow(color: Color.shadowColor.opacity(0.05), radius: 2, x: 0, y: 1)
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // 平均每周早餐天数
-                    VStack(spacing: 10) {
-                        Text(L(.weeklyAverageBreakfast))
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color.secondaryText)
-                        
-                        HStack(alignment: .lastTextBaseline, spacing: 4) {
-                            Text(String(format: "%.1f", stats.weeklyAverage))
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
-                                .foregroundColor(Color.primaryText)
-                            
-                            Text(L(.daysUnit))
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(Color.secondaryText)
-                                .padding(.leading, 2)
-                        }
-                        
-                        // 星期指示器 - 使用GeometryReader让宽度与卡片保持一致
-                        GeometryReader { geometry in
-                            HStack(spacing: 0) {
-                                ForEach(0..<7, id: \.self) { day in
-                                    RoundedRectangle(cornerRadius: 2)
-                                        .fill(day < Int(stats.weeklyAverage) ? 
-                                              Color.categoryConsistency : 
-                                              (day < Int(stats.weeklyAverage) + 1 && stats.weeklyAverage.truncatingRemainder(dividingBy: 1) > 0 ? 
-                                               Color.categoryConsistency.opacity(stats.weeklyAverage.truncatingRemainder(dividingBy: 1)) : 
-                                               Color.progressBackground))
-                                        .frame(width: (geometry.size.width - 6) / 7, height: 12) // 均匀分配宽度，留出小间隔
-                                        .padding(.horizontal, 0.5) // 添加小间隔
-                                }
-                            }
-                        }
-                        .frame(height: 12) // 固定高度
-                        .padding(.top, 5)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 15)
-                }
-                .transition(.opacity)
-            }
-        }
-        .background(cardBackground)
-        .padding(.horizontal, 20)
-    }
-    
     // 动画效果
     private var animationEffect: some View {
         Group {
@@ -549,15 +412,15 @@ public struct StatsView: View {
     private func getCompletionRateAssessment(rate: Double) -> String {
         // 使用简单的条件语句替代switch语句
         if rate < 30 {
-            return L(.needEffortToImprove)
+            return "需要努力提升"
         } else if rate < 50 {
-            return L(.roomForImprovement)
+            return "有待改进"
         } else if rate < 70 {
-            return L(.averagePerformance)
+            return "表现一般"
         } else if rate < 90 {
-            return L(.goodPerformance)
+            return "表现不错"
         } else {
-            return L(.excellentPerformance)
+            return "非常出色"
         }
     }
 }

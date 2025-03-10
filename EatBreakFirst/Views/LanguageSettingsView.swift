@@ -19,6 +19,13 @@ struct LanguageSettingsView: View {
     var body: some View {
         NavigationView {
             List {
+                // 语言选择说明
+                Section(header: Text(L(.languageSettings)), footer: Text(L(.languageSettingsNote))) {
+                    // 空视图，只显示说明文本
+                    EmptyView()
+                }
+                
+                // 手动选择语言
                 Section(header: Text(L(.language))) {
                     ForEach(AppLanguage.allCases, id: \.self) { language in
                         Button(action: {

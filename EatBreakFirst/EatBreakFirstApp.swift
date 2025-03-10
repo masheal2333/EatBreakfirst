@@ -41,7 +41,20 @@ struct EatBreakFirstApp: App {
         }
         
         // 初始化用户角色管理器
-        _ = UserRoleManager.shared
+        let userRoleManager = UserRoleManager.shared
+        
+        // 首次启动时检查系统语言并设置应用语言
+        userRoleManager.syncLanguageWithSystem()
+        
+        // 打印当前语言设置
+        print("应用启动时的语言设置: \(userRoleManager.getCurrentLanguage().displayName)")
+        
+        #if DEBUG
+        // 在调试模式下，可以通过环境变量强制重置语言设置
+        if ProcessInfo.processInfo.environment["RESET_LANGUAGE_SETTINGS"] == "1" {
+            userRoleManager.resetLanguageSettings()
+        }
+        #endif
     }
     
     var body: some Scene {

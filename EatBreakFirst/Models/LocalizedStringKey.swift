@@ -33,6 +33,9 @@ enum LocalizedStringKey {
     // 设置
     case language
     case switchLanguage
+    case languageSettings
+    case useSystemLanguage
+    case languageSettingsNote
     
     // 成就和统计
     case statistics
@@ -158,6 +161,12 @@ enum LocalizedStringKey {
             return "语言"
         case .switchLanguage:
             return "切换语言"
+        case .languageSettings:
+            return "语言设置"
+        case .useSystemLanguage:
+            return "使用系统语言"
+        case .languageSettingsNote:
+            return "应用首次启动时会使用系统语言。选择语言后，应用将一直使用您选择的语言。"
             
         // 成就和统计
         case .statistics:
@@ -353,6 +362,12 @@ enum LocalizedStringKey {
             return "Language"
         case .switchLanguage:
             return "Switch Language"
+        case .languageSettings:
+            return "Language Settings"
+        case .useSystemLanguage:
+            return "Use System Language"
+        case .languageSettingsNote:
+            return "The app uses your system language when first launched. After selecting a language, the app will continue to use your chosen language."
             
         // 成就和统计
         case .statistics:
